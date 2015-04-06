@@ -25,12 +25,13 @@ class ClinVarXMLParser
     @clinvar_set.each do |clinvar|
       @cc = XpathParser.new(clinvar)
       get_basic_info
-      #get_clinical_significance
+      get_clinical_significance
       #get_observations
       #get_alleles
       #get_diseases
     end
   end
+
 
   def get_basic_info
    r = {'title'=>get_value('//ClinVarSet/Title'),'record_status'=>get_value('//ClinVarSet/RecordStatus'),
@@ -47,6 +48,23 @@ class ClinVarXMLParser
     }
 
    puts r
+  end
+
+  def get_clinical_significance
+    #-  clinical_significance GenboreeKB Place Holder
+    #-- date_last_evaluated //ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/@DateLastEvaluated
+    #-- review_status //ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/ReviewStatus
+    #-- assertion //ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/Description
+    #-  assertion_type  //ClinVarSet/ReferenceClinVarAssertion/Assertion/@Type
+    r={
+    'clinical_significance'=>{
+      'date_last_evaluated'=>get_value('//ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/@DateLastEvaluated'),
+      'review_status'=>get_value('//ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/ReviewStatus'),
+      'assertion'=>get_value('//ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/Description')
+    },
+      'assertion_type'=>get_value('//ClinVarSet/ReferenceClinVarAssertion/Assertion/@Type')
+    }
+    puts r
   end
 
   def print_stats
