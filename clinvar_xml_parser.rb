@@ -26,7 +26,7 @@ class ClinVarXMLParser
       @cc = XpathParser.new(clinvar)
       get_basic_info
       get_clinical_significance
-      #get_observations
+      get_observations
       #get_alleles
       #get_diseases
     end
@@ -67,6 +67,33 @@ class ClinVarXMLParser
     puts r
   end
 
+  def get_observations
+    #*  observations  GenboreeKB Place Holder
+    #*- sample_id GenboreeKB Place Holder
+    #*--  origin  //ClinVarSet/ReferenceClinVarAssertion/ObservedIn/Sample/Origin
+    #*--  species //ClinVarSet/ReferenceClinVarAssertion/ObservedIn/Sample/Species
+    #*--  affected_status //ClinVarSet/ReferenceClinVarAssertion/ObservedIn/Sample/AffectedStatus
+    #*--  number_tested //ClinVarSet/ReferenceClinVarAssertion/ObservedIn/Sample/NumberTested
+    #*--  method_type //ClinVarSet/ReferenceClinVarAssertion/ObservedIn/Method/MethodType
+    r={
+      'observations'=> []
+    }
+    samples = @cc.get('//ClinVarSet/ReferenceClinVarAssertion/ObservedIn')
+    samples.each do |s|
+      @log.debug "sample:#{s}"
+      r['observations'] << {
+      'sample_id'=>{
+        'origin'=>get_doc_value(s,'./Sample/Origin'),
+        'species'=>get_doc_value(s,'./Sample/Species'),
+        'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
+        'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
+        'method_type'=>get_doc_value(s,'./Method/MethodType')
+      }
+      }
+    end
+    puts r
+  end
+
   def print_stats
     print_log(@nil_log,"The following paths yielded nil values")
     print_log(@empty_log,"The following paths yielded empty values")
@@ -82,13 +109,36 @@ class ClinVarXMLParser
     end
   end
 
+  def get_array(xpath)
+    v = @cc.get_content(xpath)
+    if v.nil?
+      @nil_log << xpath  
+    elsif v.empty?
+      @empty_log << xpath
+    end
+    return v
+  end
+
+  def get_doc_value(doc, xpath)
+    c = XpathParser.new(doc)
+    v = c.get_value(xpath)
+    if v.nil?
+      @nil_log << xpath  
+    elsif v.empty?
+      @empty_log << xpath
+    end
+
+    if v.nil?
+      return ""
+    end
+    return v
+  end
+
   def get_value(xpath)
     v = @cc.get_value(xpath)
     if v.nil?
-      puts "gaga1"
       @nil_log << xpath  
     elsif v.empty?
-      puts "gaga2"
       @empty_log << xpath
     end
     return v
