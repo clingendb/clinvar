@@ -24,6 +24,7 @@ class ClinVarXMLParser
   def run
     @clinvar_set.each do |clinvar|
       @cc = XpathParser.new(clinvar)
+      @log.debug "are you sure you are getting aleles for the current clinvar or or clinvar?"
       get_basic_info
       get_clinical_significance
       get_observations
@@ -98,7 +99,7 @@ class ClinVarXMLParser
     get_allele_basic_info
     get_molecuar_consequence
     get_locations
-   # get_genes
+    get_genes
   end
 
   def get_allele_basic_info
@@ -221,6 +222,103 @@ class ClinVarXMLParser
     puts r
   end
 
+  def get_genes
+    get_gene_locations
+    get_gene_cross_references
+    get_gene_comments
+    get_gene_misc
+  end
+
+  def get_gene_locations
+    #*--* locations GenboreeKB Place Holder
+    #*--*-  location_id GenboreeKB Place Holder
+    #*--*-- status  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@Status
+    #*--*-- chr //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@Chr
+    #*--*-- accession //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@Accession
+    #*--*-- start //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@start
+    #*--*-- stop  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@stop
+    #*--*-- strand  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation/@Strand
+    r={
+      'locations'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/SequenceLocation')
+    references.each do |s|
+      @log.debug "location:#{s}"
+      r['locations'] << {
+      'location_id'=>{
+        'status'=>get_doc_value(s,'./@Status'),
+        'assembly'=>get_doc_value(s,'./@Assembly'),
+        'chr'=>get_doc_value(s,'./@Chr'),
+        'accession'=>get_doc_value(s,'./@Accession'),
+        'start'=>get_doc_value(s,'./@start'),
+        'stop'=>get_doc_value(s,'./@stop'),
+        'strand'=>get_doc_value(s,'./@Strand'),
+      }
+      }
+    end
+
+    r['cytogenetic_location'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/CytogeneticLocation')
+    puts r
+
+  end
+
+  def get_gene_cross_references
+    #*--* cross_references  GenboreeKB Place Holder
+    #*--*-  cross_reference_id  GenboreeKB Place Holder
+    #*--*-- db_name //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/XRef/@DB
+    #*--*-- db_id //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/XRef/@ID
+    #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/XRef/@Type
+    r={
+      'cross_reference'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/XRef')
+    references.each do |s|
+      @log.debug "reference:#{s}"
+      r['cross_reference'] << {
+      'cross_reference_id'=>{
+        'db_name'=>get_doc_value(s,'./@DB'),
+        'db_id'=>get_doc_value(s,'./@ID'),
+        'type'=>get_doc_value(s,'./@Type'),
+      }
+      }
+    end
+    puts r
+  end
+
+  def get_gene_comments
+    #*--* comment GenboreeKB Place Holder
+    #*--*-  comment_id  GenboreeKB Place Holder
+    #*--*-- text  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Comment
+    #*--*-- data_source //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Comment/@DataSource
+    #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Comment/@Type
+    r={
+      'comment'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Comment')
+    references.each do |s|
+      @log.debug "reference:#{s}"
+      r['comment'] << {
+      'comment_id'=>{
+        'text'=>get_doc_value(s,'.'),
+        'data_source'=>get_doc_value(s,'./@DataSource'),
+        'type'=>get_doc_value(s,'./@Type'),
+      }
+      }
+    end
+    puts r
+
+  end
+
+  def get_gene_misc
+    #*--  gene  GenboreeKB Place Holder
+    #*--- name  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]
+    #*--- symbol  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]
+    r = {'gene'=>{}}
+    r['gene']['name'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]')
+    r['gene']['symbol'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]')
+
+    puts r
+  end
 
   def print_stats
     print_log(@nil_log,"The following paths yielded nil values")
