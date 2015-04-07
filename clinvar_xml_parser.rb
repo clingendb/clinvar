@@ -27,7 +27,7 @@ class ClinVarXMLParser
       get_basic_info
       get_clinical_significance
       get_observations
-      #get_alleles
+      get_alleles
       #get_diseases
     end
   end
@@ -78,7 +78,7 @@ class ClinVarXMLParser
     r={
       'observations'=> []
     }
-    samples = @cc.get('//ClinVarSet/ReferenceClinVarAssertion/ObservedIn')
+    samples = get('//ClinVarSet/ReferenceClinVarAssertion/ObservedIn')
     samples.each do |s|
       @log.debug "sample:#{s}"
       r['observations'] << {
@@ -94,6 +94,67 @@ class ClinVarXMLParser
     puts r
   end
 
+  def get_alleles
+    get_allele_basic_info
+   # get_molecuar_consequence
+   # get_locations
+   # get_genes
+  end
+
+  def get_allele_basic_info
+    #*  alleles GenboreeKB Place Holder
+    #*- allele_id GenboreeKB Place Holder
+    get_allele_cross_references
+    get_misc_allele_info
+  end
+  
+  def get_allele_cross_references
+    #*-*  cross_reference GenboreeKB Place Holder
+    #*-*- cross_reference_id  GenboreeKB Place Holder
+    #*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/XRef/@DB
+    #*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/XRef/@ID
+    #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/XRef/@Type
+    r={
+      'cross_reference'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/XRef')
+    references.each do |s|
+      @log.debug "reference:#{s}"
+      r['cross_reference'] << {
+      'cross_reference_id'=>{
+        'db_name'=>get_doc_value(s,'./@DB'),
+        'db_id'=>get_doc_value(s,'./@ID'),
+        'type'=>get_doc_value(s,'./@Type'),
+      }
+      }
+    end
+    puts r
+  end
+
+  def get_misc_allele_info
+    #*--  type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/@Type
+    #*--  name  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/Name/ElementValue[@Type="preferred name"]
+    #*-*  hgvs  GenboreeKB Place Holder
+    #*-*- hgvs_id GenboreeKB Place Holder
+    #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]/@Type
+    #*-*--  value //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]
+    r={
+      'hgvs'=> []
+    }
+    hgvs = get("//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]")
+    hgvs.each do |s|
+      @log.debug "hgvs:#{s}"
+      r['hgvs'] << {
+      'hgvs_id'=>{
+        'type'=>get_doc_value(s,'./@Type'),
+        'value'=>get_doc_value(s,'.'),
+      }
+      }
+    end
+    puts r
+
+  end
+
   def print_stats
     print_log(@nil_log,"The following paths yielded nil values")
     print_log(@empty_log,"The following paths yielded empty values")
@@ -107,6 +168,16 @@ class ClinVarXMLParser
         @log.info ni
       end
     end
+  end
+
+  def get(xpath)
+    v = @cc.get(xpath)
+    if v.nil?
+      @nil_log << xpath  
+    elsif v.empty?
+      @empty_log << xpath
+    end
+    return v
   end
 
   def get_array(xpath)
