@@ -96,8 +96,8 @@ class ClinVarXMLParser
 
   def get_alleles
     get_allele_basic_info
-   # get_molecuar_consequence
-   # get_locations
+    get_molecuar_consequence
+    get_locations
    # get_genes
   end
 
@@ -138,6 +138,7 @@ class ClinVarXMLParser
     #*-*- hgvs_id GenboreeKB Place Holder
     #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]/@Type
     #*-*--  value //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]
+    #*--  genbank_location  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "Location"]
     r={
       'hgvs'=> []
     }
@@ -151,9 +152,75 @@ class ClinVarXMLParser
       }
       }
     end
+
+    r['genbank_location'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "Location"]')
     puts r
 
   end
+
+  def get_molecuar_consequence
+    #*--  molecular_consequence //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]
+    #*--* cross_reference GenboreeKB Place Holder
+    #*--*-  cross_reference_id  GenboreeKB Place Holder
+    #*--*-- db_name //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@DB
+    #*--*-- db_id //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@ID
+    #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@Type
+    r={
+      'cross_reference'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef')
+    references.each do |s|
+      @log.debug "reference:#{s}"
+      r['cross_reference'] << {
+      'cross_reference_id'=>{
+        'db_name'=>get_doc_value(s,'./@DB'),
+        'db_id'=>get_doc_value(s,'./@ID'),
+        'type'=>get_doc_value(s,'./@Type'),
+      }
+      }
+    end
+
+    r['molecular_consequence'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]')
+
+    puts r
+  end
+
+  def get_locations
+    #*--  cytogenetic_location  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/CytogeneticLocation
+    #*-*  sequence_locations  GenboreeKB Place Holder
+    #*-*- location_id GenboreeKB Place Holder
+    #*-*--  assembly  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@Assembly
+    #*-*--  chr //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@Chr
+    #*-*--  accession //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@Accession
+    #*-*--  start //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@start
+    #*-*--  stop  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@stop
+    #*-*--  length  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@variantLength
+    #*-*--  reference_allele  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@referenceAllele
+    #*-*--  alternative_allele  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation/@alternateAllele
+    r={
+      'sequence_locations'=> []
+    }
+    references = get('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation')
+    references.each do |s|
+      @log.debug "location:#{s}"
+      r['sequence_locations'] << {
+      'location_id'=>{
+        'assembly'=>get_doc_value(s,'./@Assembly'),
+        'chr'=>get_doc_value(s,'./@Chr'),
+        'accession'=>get_doc_value(s,'./@Accession'),
+        'start'=>get_doc_value(s,'./@start'),
+        'stop'=>get_doc_value(s,'./@stop'),
+        'length'=>get_doc_value(s,'./@variantLength'),
+        'reference_allele'=>get_doc_value(s,'./@referenceAllele'),
+        'alternative_allele'=>get_doc_value(s,'./@alternateAllele'),
+      }
+      }
+    end
+
+    r['cytogenetic_location'] = get_value('//ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/CytogeneticLocation')
+    puts r
+  end
+
 
   def print_stats
     print_log(@nil_log,"The following paths yielded nil values")
