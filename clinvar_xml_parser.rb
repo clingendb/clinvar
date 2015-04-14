@@ -35,8 +35,7 @@ class ClinVarXMLParser
       @log.debug "after merging observations:"+r.to_json
       r['alleles'] = get_alleles
       @log.debug "after merging alleles :"+r.to_json
-      exit
-      r = get_diseases.merge(r)
+      r['diseases'] = get_diseases
       @log.debug "after merging diseases:"+r.to_json
       @log.debug "Final json:"+r.to_json
     end
@@ -53,7 +52,7 @@ class ClinVarXMLParser
      },
     'rcv_accession'=>
      {'accession'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@Acc'),
-     'date_last_updated'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@DateLastUpdated'),
+     'date_updated'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@DateUpdated'),
      'rcv_version'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@Version'),
      'status'=>get_value('./ReferenceClinVarAssertion/RecordStatus')
      }
@@ -525,7 +524,7 @@ class ClinVarXMLParser
       @log.debug "symbol:#{s}"
       r['public_definitions'] << {
       'public_definition_id'=>{
-        'sypublic_definition'=>get_doc_value(s,'.'),
+        'public_definition'=>get_doc_value(s,'.'),
       #  'cross_references'=>get_reference(@cc, '//ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef')
       }
       }
