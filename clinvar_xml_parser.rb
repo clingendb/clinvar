@@ -13,7 +13,7 @@ require 'json'
 class ClinVarXMLParser
   def initialize(file)
     pp = XpathParser.new(XpathParser::open_with_nokogiri(ARGV[0]))
-    @clinvar_set = pp.get('/ClinVarSet')
+    @clinvar_set = pp.get('/ReleaseSet/ClinVarSet')
     @log = Logging.logger(STDERR)
     @log.level = :debug
     @log.info 'XML file parsing done'
