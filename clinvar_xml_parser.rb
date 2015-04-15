@@ -1,5 +1,5 @@
 # Parse all clinvar data
-#
+# 
 # @Author Xin Feng
 # @Date 04/06/2015
 #
@@ -12,7 +12,8 @@ require 'json'
 
 class ClinVarXMLParser
   def initialize(file)
-    pp = XpathParser.new(XpathParser::open_with_nokogiri(ARGV[0]))
+    @file = file
+    pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
     @clinvar_set = pp.get('/ReleaseSet/ClinVarSet')
     @log = Logging.logger(STDERR)
     @log.level = :debug
@@ -22,8 +23,20 @@ class ClinVarXMLParser
     @empty_log= []
   end
 
+  def save_json(j, file)
+    File.open(file,'w') do |f|
+      f.write(j)
+    end
+  end
+
   def run
-    @clinvar_set.each do |clinvar|
+    if @clinvar_set.length < 1
+      @log.info "No docs found in\n"+@file
+      return
+    end
+
+    dp = ProgressPrinter.new(@clinvar_set.length)
+    @clinvar_set.each_with_index do |clinvar,i|
       r={}
       @cc = XpathParser.new(clinvar)
       @log.debug "are you sure you are getting aleles for the current clinvar or or clinvar?"
@@ -38,12 +51,13 @@ class ClinVarXMLParser
       r['diseases'] = get_diseases
       @log.debug "after merging diseases:"+r.to_json
       @log.debug "Final json:"+r.to_json
+      save_json(r.to_json,@file+"_"+i.to_s+".json")
+      dp.printProgress($stderr,i)
     end
   end
 
 
   def get_basic_info
-   # @cc = XpathParser.new(@cur_clinvar_node.xpath('.'))
    r = {'title'=>get_value('./Title'),
         'record_status'=>get_value('./RecordStatus'),
     'record_dates'=>
@@ -243,8 +257,8 @@ class ClinVarXMLParser
   end
 
   def get_genes
-    get_gene_locations
-    get_gene_cross_references
+    r = get_gene_locations
+    r = get_gene_cross_references
     get_gene_comments
     get_gene_misc
   end
@@ -344,7 +358,7 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@Type
-    get_disease_names
+    r = get_disease_names
     #*-*  symbols GenboreeKB Place Holder
     #*-*- symbol_id GenboreeKB Place Holder
     #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue/@Type
@@ -354,7 +368,7 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@Type
-    get_disease_symbols
+    r = get_disease_symbols.merge(r)
     #*-*  public_definitions  GenboreeKB Place Holder
     #*-*- public_definition_id  GenboreeKB Place Holder
     #*-*--  public_definition //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]
@@ -363,7 +377,7 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@Type
-    get_disease_public_definition
+    r = get_disease_public_definition.merge(r)
     #*-*  modes_of_inheritance  GenboreeKB Place Holder
     #*-*- mode_of_inheritance_id  GenboreeKB Place Holder
     #*-*--  mode_of_inheritance //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]
