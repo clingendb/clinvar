@@ -18,7 +18,7 @@ class ClinVarXMLParser
     pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
     @clinvar_set = pp.get('/ReleaseSet/ClinVarSet')
     @log = Logging.logger(STDERR)
-    @log.level = :debug
+    @log.level = :info
     @log.info 'XML file parsing done'
     @h = {}
     @nil_log= []
@@ -37,6 +37,7 @@ class ClinVarXMLParser
     idAdder.setPreAndPostfix("snp", "id")
     to = JsonToKB.new("DocumentID", @id.to_s)
     idAdder.modifyIDs(to.to_kb(j)).to_json
+    @id += 1 
   end
 
   def run
@@ -63,6 +64,10 @@ class ClinVarXMLParser
       @log.debug "Final json:"+r.to_json
       save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
       dp.printProgress($stderr,i)
+      if i == 100
+        @log.info "program quited at 100th file"
+        exit
+      end
     end
   end
 
