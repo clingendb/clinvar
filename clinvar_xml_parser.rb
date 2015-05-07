@@ -30,15 +30,15 @@ class ClinVarXMLParser
       r={}
       @cc = XpathParser.new(clinvar)
       @log.debug "are you sure you are getting aleles for the current clinvar or or clinvar?"
-    #  r = get_basic_info.merge(r)
+      r = get_basic_info.merge(r)
       @log.debug "after merging basic info:"+r.to_json
-     # r = get_clinical_significance.merge(r)
+      r = get_clinical_significance.merge(r)
       @log.debug "after merging clinical significance:"+r.to_json
-     # r = get_observations.merge(r)
+      r = get_observations.merge(r)
       @log.debug "after merging observations:"+r.to_json
-     # r = get_alleles.merge(r)
+      r = get_alleles.merge(r)
       @log.debug "after merging alleles :"+r.to_json
-     # r = get_diseases.merge(r)
+      r = get_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
       r = get_scvs.merge(r)
       @log.debug "Final json:"+r.to_json
@@ -237,14 +237,19 @@ class ClinVarXMLParser
     references = get('./ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation')
     references.each do |s|
       @log.debug "location:#{s}"
+          start=get_doc_value(s,'./@start')
+          stop=get_doc_value(s,'./@stop')
+      length = get_doc_value(s,'./@variantLength')
+      length = stop.to_i - start.to_i + 1 if length.empty?
+      raise "invalid length in sequence location" if length < 1
       r['sequence_locations'] << {
         'location_id'=>{
           'assembly'=>get_doc_value(s,'./@Assembly'),
           'chr'=>get_doc_value(s,'./@Chr'),
           'accession'=>get_doc_value(s,'./@Accession'),
-          'start'=>get_doc_value(s,'./@start'),
-          'stop'=>get_doc_value(s,'./@stop'),
-          'length'=>get_doc_value(s,'./@variantLength'),
+          'start'=>start,
+          'stop'=>stop,
+          'length'=>length,
           'reference_allele'=>get_doc_value(s,'./@referenceAllele'),
           'alternative_allele'=>get_doc_value(s,'./@alternateAllele'),
         }
@@ -661,7 +666,7 @@ class ClinVarXMLParser
       r['alleles'] << {
         'allele_id'=>{
           'nucleotide_change'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="nucleotide change"]'),
-          'genebank_location'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="Location"]'),
+          'genbank_location'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="Location"]'),
           'gene'=>get_doc_value(s,'./MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]'),
         }
       }
