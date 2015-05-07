@@ -15,8 +15,8 @@ require 'auto_rand_str_id'
 class ClinVarXMLParser
   def initialize(file)
     @file = file
-    pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
-    @clinvar_set = pp.get('/ReleaseSet/ClinVarSet')
+    @pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
+    @clinvar_set = @pp.get('/ReleaseSet/ClinVarSet')
     @log = Logging.logger(STDERR)
     @log.level = :info
     @log.info 'XML file parsing done'
@@ -30,20 +30,27 @@ class ClinVarXMLParser
     File.open(file,'w') do |f|
       f.write(j)
     end
+    @log.debug file+" saved for json:"
+    @log.debug j
   end
 
   def to_kb_json(j)
     idAdder = AutoRandStrID.new()
     idAdder.setPreAndPostfix("snp", "id")
     to = JsonToKB.new("DocumentID", @id.to_s)
-    idAdder.modifyIDs(to.to_kb(j)).to_json
     @id += 1 
+    idAdder.modifyIDs(to.to_kb(j)).to_json
   end
 
   def run
     if @clinvar_set.length < 1
       @log.info "No docs found in\n"+@file
+      @clinvar_set = @pp.get('/ClinVarSet')
+      if @clinvar_set.length > 0
+        @log.info "Using /ClinVarSet as the root path instead."
+      else
       return
+      end
     end
 
     dp = ProgressPrinter.new(@clinvar_set.length)
@@ -61,6 +68,7 @@ class ClinVarXMLParser
       @log.debug "after merging alleles :"+r.to_json
       r = get_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
+      r = get_scvs.merge(r)
       @log.debug "Final json:"+r.to_json
       save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
       dp.printProgress($stderr,i)
@@ -73,22 +81,22 @@ class ClinVarXMLParser
 
 
   def get_basic_info
-   r = {'title'=>get_value('./Title'),
-        'record_status'=>get_value('./RecordStatus'),
-    'record_dates'=>
-     {'date_created'=>get_value('./ReferenceClinVarAssertion/@DateCreated'),
-      'date_last_updated'=>get_value('./ReferenceClinVarAssertion/@DateLastUpdated')
-     },
+    r = {'title'=>get_value('./Title'),
+         'record_status'=>get_value('./RecordStatus'),
+         'record_dates'=>
+    {'date_created'=>get_value('./ReferenceClinVarAssertion/@DateCreated'),
+     'date_last_updated'=>get_value('./ReferenceClinVarAssertion/@DateLastUpdated')
+    },
     'rcv_accession'=>
-     {'accession'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@Acc'),
+    {'accession'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@Acc'),
      'date_updated'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@DateUpdated'),
      'rcv_version'=>get_value('./ReferenceClinVarAssertion/ClinVarAccession/@Version'),
      'status'=>get_value('./ReferenceClinVarAssertion/RecordStatus')
-     }
+    }
     }
 
-   puts r
-   return  r
+    puts r
+    return  r
   end
 
   def get_clinical_significance
@@ -98,11 +106,11 @@ class ClinVarXMLParser
     #-- assertion //ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance/Description
     #-  assertion_type  //ClinVarSet/ReferenceClinVarAssertion/Assertion/@Type
     r={
-    'clinical_significance'=>{
-      'date_last_evaluated'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/@DateLastEvaluated'),
-      'review_status'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/ReviewStatus'),
-      'assertion'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/Description')
-    },
+      'clinical_significance'=>{
+        'date_last_evaluated'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/@DateLastEvaluated'),
+        'review_status'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/ReviewStatus'),
+        'assertion'=>get_value('./ReferenceClinVarAssertion/ClinicalSignificance/Description')
+      },
       'assertion_type'=>get_value('./ReferenceClinVarAssertion/Assertion/@Type')
     }
     puts r
@@ -124,13 +132,13 @@ class ClinVarXMLParser
     samples.each do |s|
       @log.debug "sample:#{s}"
       r['observations'] << {
-      'sample_id'=>{
-        'origin'=>get_doc_value(s,'./Sample/Origin'),
-        'species'=>get_doc_value(s,'./Sample/Species'),
-        'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
-        'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
-        'method_type'=>get_doc_value(s,'./Method/MethodType')
-      }
+        'sample_id'=>{
+          'origin'=>get_doc_value(s,'./Sample/Origin'),
+          'species'=>get_doc_value(s,'./Sample/Species'),
+          'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
+          'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
+          'method_type'=>get_doc_value(s,'./Method/MethodType')
+        }
       }
     end
     puts r
@@ -141,11 +149,11 @@ class ClinVarXMLParser
     alleles = get('./ReferenceClinVarAssertion/MeasureSet/Measure')
     h = {'alleles'=>[]}
     alleles.each do |allele|
-    r = get_allele_basic_info
-    r = get_molecuar_consequence.merge(r)
-    r = get_locations.merge(r)
-    r = get_genes.merge(r)
-    h['alleles'] << {'allele_id'=>r}
+      r = get_allele_basic_info
+      r = get_molecuar_consequence.merge(r)
+      r = get_locations.merge(r)
+      r = get_genes.merge(r)
+      h['alleles'] << {'allele_id'=>r}
     end
     return h
   end
@@ -156,7 +164,7 @@ class ClinVarXMLParser
     r = get_misc_allele_info
     r = get_allele_cross_references.merge(r)
   end
-  
+
   def get_allele_cross_references
     #*-*  cross_reference GenboreeKB Place Holder
     #*-*- cross_reference_id  GenboreeKB Place Holder
@@ -170,11 +178,11 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "reference:#{s}"
       r['cross_reference'] << {
-      'cross_reference_id'=>{
-        'db_name'=>get_doc_value(s,'./@DB'),
-        'db_id'=>get_doc_value(s,'./@ID'),
-        'type'=>get_doc_value(s,'./@Type'),
-      }
+        'cross_reference_id'=>{
+          'db_name'=>get_doc_value(s,'./@DB'),
+          'db_id'=>get_doc_value(s,'./@ID'),
+          'type'=>get_doc_value(s,'./@Type'),
+        }
       }
     end
     puts r
@@ -196,10 +204,10 @@ class ClinVarXMLParser
     hgvs.each do |s|
       @log.debug "hgvs:#{s}"
       r['hgvs'] << {
-      'hgvs_id'=>{
-        'type'=>get_doc_value(s,'./@Type'),
-        'value'=>get_doc_value(s,'.'),
-      }
+        'hgvs_id'=>{
+          'type'=>get_doc_value(s,'./@Type'),
+          'value'=>get_doc_value(s,'.'),
+        }
       }
     end
 
@@ -227,11 +235,11 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "reference:#{s}"
       r['molecular_consequence']['cross_reference'] << {
-      'cross_reference_id'=>{
-        'db_name'=>get_doc_value(s,'./@DB'),
-        'db_id'=>get_doc_value(s,'./@ID'),
-        'type'=>get_doc_value(s,'./@Type'),
-      }
+        'cross_reference_id'=>{
+          'db_name'=>get_doc_value(s,'./@DB'),
+          'db_id'=>get_doc_value(s,'./@ID'),
+          'type'=>get_doc_value(s,'./@Type'),
+        }
       }
     end
 
@@ -257,16 +265,16 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "location:#{s}"
       r['sequence_locations'] << {
-      'location_id'=>{
-        'assembly'=>get_doc_value(s,'./@Assembly'),
-        'chr'=>get_doc_value(s,'./@Chr'),
-        'accession'=>get_doc_value(s,'./@Accession'),
-        'start'=>get_doc_value(s,'./@start'),
-        'stop'=>get_doc_value(s,'./@stop'),
-        'length'=>get_doc_value(s,'./@variantLength'),
-        'reference_allele'=>get_doc_value(s,'./@referenceAllele'),
-        'alternative_allele'=>get_doc_value(s,'./@alternateAllele'),
-      }
+        'location_id'=>{
+          'assembly'=>get_doc_value(s,'./@Assembly'),
+          'chr'=>get_doc_value(s,'./@Chr'),
+          'accession'=>get_doc_value(s,'./@Accession'),
+          'start'=>get_doc_value(s,'./@start'),
+          'stop'=>get_doc_value(s,'./@stop'),
+          'length'=>get_doc_value(s,'./@variantLength'),
+          'reference_allele'=>get_doc_value(s,'./@referenceAllele'),
+          'alternative_allele'=>get_doc_value(s,'./@alternateAllele'),
+        }
       }
     end
 
@@ -310,15 +318,15 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "location:#{s}"
       r['locations'] << {
-      'location_id'=>{
-        'status'=>get_doc_value(s,'./@Status'),
-        'assembly'=>get_doc_value(s,'./@Assembly'),
-        'chr'=>get_doc_value(s,'./@Chr'),
-        'accession'=>get_doc_value(s,'./@Accession'),
-        'start'=>get_doc_value(s,'./@start'),
-        'stop'=>get_doc_value(s,'./@stop'),
-        'strand'=>get_doc_value(s,'./@Strand'),
-      }
+        'location_id'=>{
+          'status'=>get_doc_value(s,'./@Status'),
+          'assembly'=>get_doc_value(s,'./@Assembly'),
+          'chr'=>get_doc_value(s,'./@Chr'),
+          'accession'=>get_doc_value(s,'./@Accession'),
+          'start'=>get_doc_value(s,'./@start'),
+          'stop'=>get_doc_value(s,'./@stop'),
+          'strand'=>get_doc_value(s,'./@Strand'),
+        }
       }
     end
 
@@ -341,11 +349,11 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "reference:#{s}"
       r['cross_reference'] << {
-      'cross_reference_id'=>{
-        'db_name'=>get_doc_value(s,'./@DB'),
-        'db_id'=>get_doc_value(s,'./@ID'),
-        'type'=>get_doc_value(s,'./@Type'),
-      }
+        'cross_reference_id'=>{
+          'db_name'=>get_doc_value(s,'./@DB'),
+          'db_id'=>get_doc_value(s,'./@ID'),
+          'type'=>get_doc_value(s,'./@Type'),
+        }
       }
     end
     puts r
@@ -365,11 +373,11 @@ class ClinVarXMLParser
     references.each do |s|
       @log.debug "reference:#{s}"
       r['comment'] << {
-      'comment_id'=>{
-        'text'=>get_doc_value(s,'.'),
-        'data_source'=>get_doc_value(s,'./@DataSource'),
-        'type'=>get_doc_value(s,'./@Type'),
-      }
+        'comment_id'=>{
+          'text'=>get_doc_value(s,'.'),
+          'data_source'=>get_doc_value(s,'./@DataSource'),
+          'type'=>get_doc_value(s,'./@Type'),
+        }
       }
     end
     puts r
@@ -393,6 +401,111 @@ class ClinVarXMLParser
     diseases = get('./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]')
     h = {'diseases'=>[]}
     diseases.each do |allele|
+      #*  diseases  GenboreeKB Place Holder
+      #*- disease_id  GenboreeKB Place Holder
+      #*-*  names GenboreeKB Place Holder
+      #*-*- name_id GenboreeKB Place Holder
+      #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue/@Type
+      #*-*--  name  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@Type
+      r = get_disease_names
+      #*-*  symbols GenboreeKB Place Holder
+      #*-*- symbol_id GenboreeKB Place Holder
+      #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue/@Type
+      #*-*--  symbol  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@Type
+      r = get_disease_symbols.merge(r)
+      #*-*  public_definitions  GenboreeKB Place Holder
+      #*-*- public_definition_id  GenboreeKB Place Holder
+      #*-*--  public_definition //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@Type
+      r = get_disease_public_definition.merge(r)
+      #*-*  modes_of_inheritance  GenboreeKB Place Holder
+      #*-*- mode_of_inheritance_id  GenboreeKB Place Holder
+      #*-*--  mode_of_inheritance //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@Type
+      # get_disease_modes_of_inheritance
+      #*-*  ages_of_onset GenboreeKB Place Holder
+      #*-*- age_of_onset_id GenboreeKB Place Holder
+      #*-*--  age_of_onset  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@Type
+      #  get_disease_ages_of_onset
+      #*-*  mechanisms_of_disease GenboreeKB Place Holder
+      #*-*- mechanism_of_disease_id GenboreeKB Place Holder
+      #*-*--  mechanism_of_disease  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@Type
+      # get_disease_mechanisms
+      #*-*  prevalance  GenboreeKB Place Holder
+      #*-*- prevalance_id GenboreeKB Place Holder
+      #*-*--  prevalance  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]
+      #*-*-*  cross_references  GenboreeKB Place Holder
+      #*-*-*- cross_reference_id  GenboreeKB Place Holder
+      #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@DB
+      #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@ID
+      #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@Type
+      # get_disease_prevalance
+      #*--* citations GenboreeKB Place Holder
+      #*--*-  citation_id GenboreeKB Place Holder
+      #*--*-- text  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/@Abbrev
+      #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/@Type
+      #*--*-- source  GenboreeKB Place Holder
+      #*--*---  name  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/ID/@Source
+      #*--*---  id  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/ID
+      #*--*---  url //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/URL
+      # get_disease_citations
+      h['diseases'] << {'disease_id'=>r}
+    end
+    return h
+  end
+
+
+  def get_reference(doc, ref_xpath)
+    ref_sec_name = 'cross_reference'
+    ref_sec_id = 'cross_reference_id'
+    ref_path = ref_xpath
+    r={
+      ref_sec_name => []
+    }
+    @log.debug "reference not set here!"
+    references = get(ref_path)
+    references.each do |s|
+      @log.debug "reference:#{s}"
+      r[ref_sec_name] << {
+        ref_sec_id=>{
+          'db_name'=>get_doc_value(s,'./@DB'),
+          'db_id'=>get_doc_value(s,'./@ID'),
+          'type'=>get_doc_value(s,'./@Type'),
+        }
+      }
+    end
+    return r 
+  end
+
+  def get_disease_names
     #*  diseases  GenboreeKB Place Holder
     #*- disease_id  GenboreeKB Place Holder
     #*-*  names GenboreeKB Place Holder
@@ -404,134 +517,29 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@Type
-    r = get_disease_names
-    #*-*  symbols GenboreeKB Place Holder
-    #*-*- symbol_id GenboreeKB Place Holder
-    #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue/@Type
-    #*-*--  symbol  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@Type
-    r = get_disease_symbols.merge(r)
-    #*-*  public_definitions  GenboreeKB Place Holder
-    #*-*- public_definition_id  GenboreeKB Place Holder
-    #*-*--  public_definition //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@Type
-    r = get_disease_public_definition.merge(r)
-    #*-*  modes_of_inheritance  GenboreeKB Place Holder
-    #*-*- mode_of_inheritance_id  GenboreeKB Place Holder
-    #*-*--  mode_of_inheritance //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="ModeOfInheritance"]/following-sibling::XRef/@Type
-   # get_disease_modes_of_inheritance
-    #*-*  ages_of_onset GenboreeKB Place Holder
-    #*-*- age_of_onset_id GenboreeKB Place Holder
-    #*-*--  age_of_onset  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="age of onset"]/following-sibling::XRef/@Type
-  #  get_disease_ages_of_onset
-    #*-*  mechanisms_of_disease GenboreeKB Place Holder
-    #*-*- mechanism_of_disease_id GenboreeKB Place Holder
-    #*-*--  mechanism_of_disease  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="disease mechanism"]/following-sibling::XRef/@Type
-   # get_disease_mechanisms
-    #*-*  prevalance  GenboreeKB Place Holder
-    #*-*- prevalance_id GenboreeKB Place Holder
-    #*-*--  prevalance  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="prevalance"]/following-sibling::XRef/@Type
-   # get_disease_prevalance
-    #*--* citations GenboreeKB Place Holder
-    #*--*-  citation_id GenboreeKB Place Holder
-    #*--*-- text  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/@Abbrev
-    #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/@Type
-    #*--*-- source  GenboreeKB Place Holder
-    #*--*---  name  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/ID/@Source
-    #*--*---  id  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/ID
-    #*--*---  url //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Citation/URL
-   # get_disease_citations
-    h['diseases'] << {'disease_id'=>r}
-    end
-    return h
-  end
-
-  
-  def get_reference(doc, ref_xpath)
-  ref_sec_name = 'cross_reference'
-  ref_sec_id = 'cross_reference_id'
-  ref_path = ref_xpath
-   r={
-      ref_sec_name => []
-    }
-   @log.debug "reference not set here!"
-    references = get(ref_path)
-    references.each do |s|
-      @log.debug "reference:#{s}"
-      r[ref_sec_name] << {
-      ref_sec_id=>{
-        'db_name'=>get_doc_value(s,'./@DB'),
-        'db_id'=>get_doc_value(s,'./@ID'),
-        'type'=>get_doc_value(s,'./@Type'),
-      }
-      }
-    end
-    return r 
-	end
-	
-	def get_disease_names
-	  #*  diseases  GenboreeKB Place Holder
-    #*- disease_id  GenboreeKB Place Holder
-    #*-*  names GenboreeKB Place Holder
-    #*-*- name_id GenboreeKB Place Holder
-    #*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue/@Type
-    #*-*--  name  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue
-    #*-*-*  cross_references  GenboreeKB Place Holder
-    #*-*-*- cross_reference_id  GenboreeKB Place Holder
-    #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@DB
-    #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@ID
-    #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef/@Type
-	 r={
+    r={
       'names'=> []
     }
-	# TODO: Assuming dealing with current clinvarset data
+    # TODO: Assuming dealing with current clinvarset data
     names = get('./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue')
     names.each do |s|
       @log.debug "name:#{s}"
       r['names'] << {
-      'name_id'=>{
-        'name'=>get_doc_value(s,'.'),
-        'type'=>get_doc_value(s,'./@Type'),
-		    #'cross_references'=>get_reference(@cc, './ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef')
-      }
+        'name_id'=>{
+          'name'=>get_doc_value(s,'.'),
+          'type'=>get_doc_value(s,'./@Type'),
+          #'cross_references'=>get_reference(@cc, './ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef')
+        }
       }
     end
     puts r
     return r
-	
-	
-	end
-	
-	def get_disease_symbols
-	  #*-*  symbols GenboreeKB Place Holder
+
+
+  end
+
+  def get_disease_symbols
+    #*-*  symbols GenboreeKB Place Holder
     #*-*- symbol_id GenboreeKB Place Holder
     #*-*--  type  ./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue/@Type
     #*-*--  symbol  ./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue
@@ -540,27 +548,27 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/XRef/@Type
-	 r={
+    r={
       'symbols'=> []
     }
     names = get('./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Symbol/ElementValue')
     names.each do |s|
       @log.debug "symbol:#{s}"
       r['symbols'] << {
-      'symbol_id'=>{
-        'symbol'=>get_doc_value(s,'.'),
-        'type'=>get_doc_value(s,'./@Type'),
-      #   'cross_references'=>get_reference(@cc, '//ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef')
-      }
+        'symbol_id'=>{
+          'symbol'=>get_doc_value(s,'.'),
+          'type'=>get_doc_value(s,'./@Type'),
+          #   'cross_references'=>get_reference(@cc, '//ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/XRef')
+        }
       }
     end
     puts r
     return r
-	end
+  end
 
-  
-   def get_disease_public_definition
-     #*-*  public_definitions  GenboreeKB Place Holder
+
+  def get_disease_public_definition
+    #*-*  public_definitions  GenboreeKB Place Holder
     #*-*- public_definition_id  GenboreeKB Place Holder
     #*-*--  public_definition //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]
     #*-*-*  cross_references  GenboreeKB Place Holder
@@ -568,24 +576,102 @@ class ClinVarXMLParser
     #*-*-*--  db_name //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@DB
     #*-*-*--  db_id //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@ID
     #*-*-*--  type  //ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef/@Type
-     r={
+    r={
       'public_definitions'=> []
     }
     names = get('./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]')
     names.each do |s|
       @log.debug "symbol:#{s}"
       r['public_definitions'] << {
-      'public_definition_id'=>{
-        'public_definition'=>get_doc_value(s,'.'),
-      #  'cross_references'=>get_reference(@cc, '//ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef')
-      }
+        'public_definition_id'=>{
+          'public_definition'=>get_doc_value(s,'.'),
+          #  'cross_references'=>get_reference(@cc, '//ClinVarSet/ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/AttributeSet/Attribute[@Type="public definition"]/following-sibling::XRef')
+        }
       }
     end
     puts r
     return r
-   end
-	
+  end
 
+  def get_scvs
+    scvs = get('./ClinVarAssertion')
+    h = {'clinvar_assertions'=>[]}
+    scvs.each do |scv|
+      r = get_scv_submission_info
+      @log.debug "after merging basic info:"+r.to_json
+      r = get_scv_observations.merge(r)
+      @log.debug "after merging observations:"+r.to_json
+      r = get_scv_alleles.merge(r)
+      @log.debug "after merging alleles:"+r.to_json
+      r = get_scv_diseases.merge(r)
+      @log.debug "after merging diseases:"+r.to_json
+      h['clinvar_assertions'] << {'clinvar_assertion_id'=>r}
+    end
+    return h
+  end
+
+  def get_scv_submission_info
+    # * clinvar_assertions  GenboreeKB Place Holder
+    # *-  clinvar_assertion_id  GenboreeKB Place Holder
+    # *-- submitter //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/@submitter
+    # *-- title //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/@title
+    # *-- submitter_date  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/submitterDate
+    # *-- clinvar_accession GenboreeKB Place Holder
+    # *---  scv_accession //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@Acc
+    # *---  version //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@Version
+    # *---  org_id  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@OrgID
+    # *---  date_updated  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@DateUpdated
+    # *-- record_status //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/RecordStatus
+    # *-- clinical_significance //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/RecordStatus
+    # *---  date_last_evaluated //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/@DateLastEvaluated
+    # *---  review_status //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/ReviewStatus
+    # *---  assertion //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/Description
+    # *-- assertion_type  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/Assertion/@Type
+    r['clinvar_assertion_id']['submitter'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['clinvar_assertion_id']['title'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['clinvar_assertion_id']['submitter_date'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['clinvar_assertion_id']['clinvar_accession'] = {}
+    r['clinvar_assertion_id']['clinvar_accession']['scv_accession'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Acc')
+    r['clinvar_assertion_id']['clinvar_accession']['version'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Version')
+    r['clinvar_assertion_id']['clinvar_accession']['org_id'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@OrgID')
+    r['clinvar_assertion_id']['clinvar_accession']['date_updated'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@DateUpdated')
+    @log.info "Hasnt finished here!!!"
+    puts r
+    return r
+  end
+  def get_scv_observations
+  #*-* observations  GenboreeKB Place Holder
+  #*-*-  sample_id GenboreeKB Place Holder
+  #*-*-- origin  //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Origin
+  #*-*-- species //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Species
+  #*-*-- affected_status //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/AffectedStatus
+  #*-*-- number_tested //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/NumberTested
+  #*-*-- method_type //ClinVarSet/ClinVarAssertion/ObservedIn/Method/MethodType
+  #*-*-- observed_data //ClinVarSet/ClinVarAssertion/ObservedIn/ObservedData
+    r={
+      'observations'=> []
+    }
+    names = get('./ClinVarAssertion/ObservedIn')
+    names.each do |s|
+      r['observations'] << {
+        'sample_id'=>{
+          'origin'=>get_doc_value(s,'./Sample/Origin'),
+          'origin'=>get_doc_value(s,'./Sample/Species'),
+          'origin'=>get_doc_value(s,'./Sample/AffectedStatus'),
+        }
+      }
+    end
+    @log.info "to be done!"
+    puts r
+    return r
+
+  end
+  def get_scv_alleles
+    {}
+  end
+  def get_scv_diseases
+    {}
+  end
   def print_stats
     print_log(@nil_log,"The following paths yielded nil values")
     print_log(@empty_log,"The following paths yielded empty values")
