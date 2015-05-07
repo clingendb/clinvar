@@ -644,6 +644,9 @@ class ClinVarXMLParser
           'origin'=>get_doc_value(s,'./Sample/Origin'),
           'species'=>get_doc_value(s,'./Sample/Species'),
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
+          'method_type'=>get_doc_value(s,'./Method/MethodType'),
+          # 'observed_data'=>get_doc_value(s,'./ObservedData'), #TODO: This is perhaps an array!
+          'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
         }
       }
     end
@@ -668,15 +671,26 @@ class ClinVarXMLParser
     names = get('./MeasureSet/Measure')
     @log.debug "Got #{names.length} measures in scvs"
     names.each do |s|
+      hgvs= get_by_doc(s, './AttributeSet/Attribute[starts-with(@Type, "HGVS")]')
+      @log.debug "Got #{hgvs.length} hgvs names in scvs"
+      n = []
+      hgvs.each do |h|
+        n << {
+          'hgvs_id'=>{
+            'type'=>get_doc_value(h,'./@Type'),
+            'value'=>get_doc_value(h,'.')
+          }
+        }
+      end
       r['alleles'] << {
         'allele_id'=>{
           'nucleotide_change'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="nucleotide change"]'),
           'genbank_location'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="Location"]'),
           'gene'=>get_doc_value(s,'./MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]'),
+          'hgvs'=>n
         }
       }
     end
-    @log.info "to be done!"
     puts r
     return r
     r = {}
