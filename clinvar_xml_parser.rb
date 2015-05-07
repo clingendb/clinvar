@@ -13,34 +13,6 @@ require 'json_to_kb'
 require 'auto_rand_str_id'
 
 class ClinVarXMLParser
-  def initialize(file)
-    @file = file
-    @pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
-    @clinvar_set = @pp.get('/ReleaseSet/ClinVarSet')
-    @log = Logging.logger(STDERR)
-    @log.level = :info
-    @log.info 'XML file parsing done'
-    @h = {}
-    @nil_log= []
-    @empty_log= []
-    @id = 1
-  end
-
-  def save_json(j, file)
-    File.open(file,'w') do |f|
-      f.write(j)
-    end
-    @log.debug file+" saved for json:"
-    @log.debug j
-  end
-
-  def to_kb_json(j)
-    idAdder = AutoRandStrID.new()
-    idAdder.setPreAndPostfix("snp", "id")
-    to = JsonToKB.new("DocumentID", @id.to_s)
-    @id += 1 
-    idAdder.modifyIDs(to.to_kb(j)).to_json
-  end
 
   def run
     if @clinvar_set.length < 1
@@ -58,15 +30,15 @@ class ClinVarXMLParser
       r={}
       @cc = XpathParser.new(clinvar)
       @log.debug "are you sure you are getting aleles for the current clinvar or or clinvar?"
-      r = get_basic_info.merge(r)
+    #  r = get_basic_info.merge(r)
       @log.debug "after merging basic info:"+r.to_json
-      r = get_clinical_significance.merge(r)
+     # r = get_clinical_significance.merge(r)
       @log.debug "after merging clinical significance:"+r.to_json
-      r = get_observations.merge(r)
+     # r = get_observations.merge(r)
       @log.debug "after merging observations:"+r.to_json
-      r = get_alleles.merge(r)
+     # r = get_alleles.merge(r)
       @log.debug "after merging alleles :"+r.to_json
-      r = get_diseases.merge(r)
+     # r = get_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
       r = get_scvs.merge(r)
       @log.debug "Final json:"+r.to_json
@@ -137,7 +109,8 @@ class ClinVarXMLParser
           'species'=>get_doc_value(s,'./Sample/Species'),
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
-          'method_type'=>get_doc_value(s,'./Method/MethodType')
+          'method_type'=>get_doc_value(s,'./Method/MethodType'),
+          'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
         }
       }
     end
@@ -595,8 +568,10 @@ class ClinVarXMLParser
 
   def get_scvs
     scvs = get('./ClinVarAssertion')
+    @log.debug "got #{scvs.length} scvs"
     h = {'clinvar_assertions'=>[]}
     scvs.each do |scv|
+      @cc = XpathParser.new(scv) #TODO: This is really instrusive
       r = get_scv_submission_info
       @log.debug "after merging basic info:"+r.to_json
       r = get_scv_observations.merge(r)
@@ -628,14 +603,14 @@ class ClinVarXMLParser
     # *---  assertion //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/Description
     # *-- assertion_type  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/Assertion/@Type
     r = {}
-    r['submitter'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
-    r['title'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
-    r['submitter_date'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['submitter'] = get_value('./ClinVarSubmissionID/@submitter')
+    r['title'] = get_value('./ClinVarSubmissionID/@submitter')
+    r['submitter_date'] = get_value('./ClinVarSubmissionID/@submitter')
     r['clinvar_accession'] = {}
-    r['clinvar_accession']['scv_accession'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Acc')
-    r['clinvar_accession']['version'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Version')
-    r['clinvar_accession']['org_id'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@OrgID')
-    r['clinvar_accession']['date_updated'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@DateUpdated')
+    r['clinvar_accession']['scv_accession'] = get_value('./ClinVarAccession/@Acc')
+    r['clinvar_accession']['version'] = get_value('./ClinVarAccession/@Version')
+    r['clinvar_accession']['org_id'] = get_value('./ClinVarAccession/@OrgID')
+    r['clinvar_accession']['date_updated'] = get_value('./ClinVarAccession/@DateUpdated')
     @log.info "Hasnt finished here!!!"
     puts r
     return r
@@ -652,13 +627,13 @@ class ClinVarXMLParser
     r={
       'observations'=> []
     }
-    names = get('./ClinVarAssertion/ObservedIn')
+    names = get('./ObservedIn')
     names.each do |s|
       r['observations'] << {
         'sample_id'=>{
           'origin'=>get_doc_value(s,'./Sample/Origin'),
-          'origin'=>get_doc_value(s,'./Sample/Species'),
-          'origin'=>get_doc_value(s,'./Sample/AffectedStatus'),
+          'species'=>get_doc_value(s,'./Sample/Species'),
+          'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
         }
       }
     end
@@ -668,9 +643,72 @@ class ClinVarXMLParser
 
   end
   def get_scv_alleles
-    {}
+    #*-* alleles GenboreeKB Place Holder
+    #*-*-  allele_id GenboreeKB Place Holder
+    #*-*-- nucleotide_change //ClinVarSet/ClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "nucleotide change"]
+    #*-*-- gene  //ClinVarSet/ClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]
+    #*-*-* hgvs  GenboreeKB Place Holder
+    #*-*-*-  hgvs_id GenboreeKB Place Holder
+    #*-*-*-- type  //ClinVarSet/ClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]/@Type
+    #*-*-*-- value //ClinVarSet/ClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[starts-with(@Type, 'HGVS')]
+    #*-*-- genbank_location  //ClinVarSet/ClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "Location"]
+    r={
+      'alleles'=> []
+    }
+    names = get('./MeasureSet/Measure')
+    @log.debug "Got #{names.length} measures in scvs"
+    names.each do |s|
+      r['alleles'] << {
+        'allele_id'=>{
+          'nucleotide_change'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="nucleotide change"]'),
+          'genebank_location'=>get_doc_value(s,'./AttributeSet/Attribute[@Type="Location"]'),
+          'gene'=>get_doc_value(s,'./MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]'),
+        }
+      }
+    end
+    @log.info "to be done!"
+    puts r
+    return r
+    r = {}
   end
   def get_scv_diseases
+    #*-* diseases  GenboreeKB Place Holder
+    #*-*-  disease_id  GenboreeKB Place Holder
+    #*-*-* names GenboreeKB Place Holder
+    #*-*-*-  name_id GenboreeKB Place Holder
+    #*-*-*-- type  //ClinVarSet/ClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue/@Type
+    #*-*-*-- name  //ClinVarSet/ClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/Name/ElementValue
+    #*-*-*-* cross_reference GenboreeKB Place Holder
+    #*-*-*-*-  cross_reference_id  GenboreeKB Place Holder
+    #*-*-*-*-- db_name //ClinVarSet/ClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/XRef/@DB
+    #*-*-*-*-- db_id //ClinVarSet/ClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/XRef/@ID
+    #*-*-*-*-- type  //ClinVarSet/ClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]/XRef/@Type
+    r={
+      'diseases'=> []
+    }
+    names = get('./TraitSet[@Type="Disease"]')
+    names.each do |s|
+      disease_names = get('./Trait[@Type="Disease"]/Name')
+      n = []
+      disease_names.each do |disease_name|
+        n << {
+        'name_id'=>{
+          'type'=>get_doc_value(disease_name, './ElementValue/@Type'),
+          'name'=>get_doc_value(disease_name, './ElementValue')
+        }
+        }
+      end
+
+      r['diseases'] << {
+        'disease_id'=>{
+          'names'=>n
+        }
+      }
+    end
+    @log.info "to be done!"
+    puts r
+    return r
+    r = {}
     {}
   end
   def print_stats
@@ -678,6 +716,34 @@ class ClinVarXMLParser
     print_log(@empty_log,"The following paths yielded empty values")
   end
 
+  def initialize(file)
+    @file = file
+    @pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
+    @clinvar_set = @pp.get('/ReleaseSet/ClinVarSet')
+    @log = Logging.logger(STDERR)
+    @log.level = :info
+    @log.info 'XML file parsing done'
+    @h = {}
+    @nil_log= []
+    @empty_log= []
+    @id = 1
+  end
+
+  def save_json(j, file)
+    File.open(file,'w') do |f|
+      f.write(j)
+    end
+    @log.debug file+" saved for json:"
+    @log.debug j
+  end
+
+  def to_kb_json(j)
+    idAdder = AutoRandStrID.new()
+    idAdder.setPreAndPostfix("snp", "id")
+    to = JsonToKB.new("DocumentID", @id.to_s)
+    @id += 1 
+    idAdder.modifyIDs(to.to_kb(j)).to_json
+  end
   private
   def record_nil_and_empty_xpath(v,xpath)
     if v.nil?
@@ -698,6 +764,13 @@ class ClinVarXMLParser
 
   def get(xpath)
     v = @cc.get(xpath)
+    record_nil_and_empty_xpath(v,xpath)
+    return v
+  end
+
+  def get_by_doc(doc, xpath)
+    c = XpathParser.new(doc)
+    v = c.get(xpath)
     record_nil_and_empty_xpath(v,xpath)
     return v
   end
