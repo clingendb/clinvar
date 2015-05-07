@@ -686,9 +686,12 @@ class ClinVarXMLParser
     r={
       'diseases'=> []
     }
-    names = get('./TraitSet[@Type="Disease"]')
+    names = get('./TraitSet[@Type="Disease"]/Trait[@Type="Disease"]')
+      @log.debug "Got #{names.length} diseases in scvs"
     names.each do |s|
-      disease_names = get('./Trait[@Type="Disease"]/Name')
+      @log.debug s.inspect
+      disease_names = get_by_doc(s, './Name')
+      @log.debug "Got #{disease_names.length} disease names in scvs"
       n = []
       disease_names.each do |disease_name|
         n << {
