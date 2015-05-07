@@ -601,22 +601,27 @@ class ClinVarXMLParser
     # *---  version //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@Version
     # *---  org_id  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@OrgID
     # *---  date_updated  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/@DateUpdated
-    # *-- record_status //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/RecordStatus
-    # *-- clinical_significance //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinVarAccession/RecordStatus
-    # *---  date_last_evaluated //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/@DateLastEvaluated
-    # *---  review_status //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/ReviewStatus
-    # *---  assertion //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/Description
-    # *-- assertion_type  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/Assertion/@Type
+    # *-- record_status //ClinVarSet/ClinVarAssertion/RecordStatus
+    # *-- clinical_significance 
+    # *---  date_last_evaluated //ClinVarSet/ClinVarAssertion/ClinicalSignificance/@DateLastEvaluated
+    # *---  review_status //ClinVarSet/ClinVarAssertion/ClinicalSignificance/ReviewStatus
+    # *---  assertion //ClinVarSet/ClinVarAssertion/ClinicalSignificance/Description
+    # *-- assertion_type  //ClinVarSet/ClinVarAssertion/Assertion/@Type
     r = {}
     r['submitter'] = get_value('./ClinVarSubmissionID/@submitter')
-    r['title'] = get_value('./ClinVarSubmissionID/@submitter')
-    r['submitter_date'] = get_value('./ClinVarSubmissionID/@submitter')
+    r['title'] = get_value('./ClinVarSubmissionID/@title')
+    r['submitter_date'] = get_value('./ClinVarSubmissionID/@submitterDate')
     r['clinvar_accession'] = {}
     r['clinvar_accession']['scv_accession'] = get_value('./ClinVarAccession/@Acc')
     r['clinvar_accession']['version'] = get_value('./ClinVarAccession/@Version')
     r['clinvar_accession']['org_id'] = get_value('./ClinVarAccession/@OrgID')
     r['clinvar_accession']['date_updated'] = get_value('./ClinVarAccession/@DateUpdated')
-    @log.info "Hasnt finished here!!!"
+    r['clinical_significance'] = {}
+    r['clinical_significance']['date_last_evaluated'] = get_value('./ClinicalSignificance/@DateLastEvaluated')
+    r['clinical_significance']['review_status'] = get_value('./ClinicalSignificance/ReviewStatus')
+    r['clinical_significance']['assertion'] = get_value('./ClinicalSignificance/Description')
+    r['assertion_type'] = get_value('./Assertion/@Type')
+    r['record_status'] = get_value('./RecordStatus')
     puts r
     return r
   end
