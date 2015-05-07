@@ -627,14 +627,15 @@ class ClinVarXMLParser
     # *---  review_status //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/ReviewStatus
     # *---  assertion //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/ClinicalSignificance/Description
     # *-- assertion_type  //ClinVarSet/ClinVarAssertion/ClinVarSubmissionID/Assertion/@Type
-    r['clinvar_assertion_id']['submitter'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
-    r['clinvar_assertion_id']['title'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
-    r['clinvar_assertion_id']['submitter_date'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
-    r['clinvar_assertion_id']['clinvar_accession'] = {}
-    r['clinvar_assertion_id']['clinvar_accession']['scv_accession'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Acc')
-    r['clinvar_assertion_id']['clinvar_accession']['version'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Version')
-    r['clinvar_assertion_id']['clinvar_accession']['org_id'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@OrgID')
-    r['clinvar_assertion_id']['clinvar_accession']['date_updated'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@DateUpdated')
+    r = {}
+    r['submitter'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['title'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['submitter_date'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/@submitter')
+    r['clinvar_accession'] = {}
+    r['clinvar_accession']['scv_accession'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Acc')
+    r['clinvar_accession']['version'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@Version')
+    r['clinvar_accession']['org_id'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@OrgID')
+    r['clinvar_accession']['date_updated'] = get_value('./ClinVarAssertion/ClinVarSubmissionID/ClinvarAccession/@DateUpdated')
     @log.info "Hasnt finished here!!!"
     puts r
     return r
