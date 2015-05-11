@@ -67,7 +67,7 @@ class ClinVarXMLParser
     }
     }
 
-    puts r
+    @log.debug r
     return  r
   end
 
@@ -85,7 +85,7 @@ class ClinVarXMLParser
       },
       'assertion_type'=>get_value('./ReferenceClinVarAssertion/Assertion/@Type')
     }
-    puts r
+    @log.debug r
     return r
   end
 
@@ -114,7 +114,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
   end
 
@@ -158,7 +158,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
   end
 
@@ -187,35 +187,37 @@ class ClinVarXMLParser
     r['type'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/@Type')
     r['name'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/Name/ElementValue[@Type="Preferred"]')
     r['genbank_location'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "Location"]')
-    puts r
+    @log.debug r
 
     return r
   end
 
   def get_molecuar_consequence
-    #*--  molecular_consequence //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]
-    #*--- value //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]
-    #*--* cross_reference GenboreeKB Place Holder
-    #*--*-  cross_reference_id  GenboreeKB Place Holder
-    #*--*-- db_name //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@DB
-    #*--*-- db_id //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@ID
-    #*--*-- type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@Type
+    #*-* molecular_consequences  GenboreeKB Place Holder
+    #*-*-  molecular_consequence_id  GenboreeKB Place Holder
+    #*-*-- value //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]
+    #*-*-* cross_reference GenboreeKB Place Holder
+    #*-*-*-  cross_reference_id  GenboreeKB Place Holder
+    #*-*-*-- db_name //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@DB
+    #*-*-*-- db_id //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@ID
+    #*-*-*-- type  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef/@Type
 
-    r={}
-    r['molecular_consequence'] = {'value'=>'','cross_reference'=>[]}
-    r['molecular_consequence']['value'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]')
-    references = get('./ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]/following-sibling::XRef')
-    references.each do |s|
-      @log.debug "reference:#{s}"
-      r['molecular_consequence']['cross_reference'] << {
-        'cross_reference_id'=>{
-          'db_name'=>get_doc_value(s,'./@DB'),
-          'db_id'=>get_doc_value(s,'./@ID'),
-          'type'=>get_doc_value(s,'./@Type'),
+    r={
+      'molecular_consequences'=> {}
+    }
+    mc = get('./ReferenceClinVarAssertion/MeasureSet/Measure/AttributeSet/Attribute[@Type = "MolecularConsequence"]')
+    n = []
+    mc.each do |s|
+      @log.debug s.inspect
+      @log.info "fix the reference part here"
+
+      n << {
+        'molecular_consequence_id'=>{
+          'value'=>get_doc_value(s, '.')
         }
       }
     end
-
+    r['molecular_consequences'] = n
     return r
   end
 
@@ -237,10 +239,14 @@ class ClinVarXMLParser
     references = get('./ReferenceClinVarAssertion/MeasureSet/Measure/SequenceLocation')
     references.each do |s|
       @log.debug "location:#{s}"
-          start=get_doc_value(s,'./@start')
-          stop=get_doc_value(s,'./@stop')
-      length = get_doc_value(s,'./@variantLength')
-      length = stop.to_i - start.to_i + 1 if length.empty?
+      start=get_doc_value(s,'./@start')
+      stop=get_doc_value(s,'./@stop')
+      l = get_doc_value(s,'./@variantLength')
+      length = l.to_i
+      if l.empty?
+        @log.warn "empty variant length for "+s.inspect
+        length = stop.to_i - start.to_i + 1 
+      end
       raise "invalid length in sequence location" if length < 1
       r['sequence_locations'] << {
         'location_id'=>{
@@ -257,7 +263,7 @@ class ClinVarXMLParser
     end
 
     r['cytogenetic_location'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/CytogeneticLocation')
-    puts r
+    @log.debug r
     return r
   end
 
@@ -309,7 +315,7 @@ class ClinVarXMLParser
     end
 
     r['cytogenetic_location'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/CytogeneticLocation')
-    puts r
+    @log.debug r
     return r
 
   end
@@ -334,7 +340,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
   end
 
@@ -358,7 +364,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
 
     return r
   end
@@ -371,7 +377,7 @@ class ClinVarXMLParser
     r['gene']['name'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]')
     r['gene']['symbol'] = get_value('./ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]')
 
-    puts r
+    @log.debug r
     return r
   end
 
@@ -510,7 +516,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
 
 
@@ -540,7 +546,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
   end
 
@@ -567,7 +573,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
   end
 
@@ -622,18 +628,18 @@ class ClinVarXMLParser
     r['clinical_significance']['assertion'] = get_value('./ClinicalSignificance/Description')
     r['assertion_type'] = get_value('./Assertion/@Type')
     r['record_status'] = get_value('./RecordStatus')
-    puts r
+    @log.debug r
     return r
   end
   def get_scv_observations
-  #*-* observations  GenboreeKB Place Holder
-  #*-*-  sample_id GenboreeKB Place Holder
-  #*-*-- origin  //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Origin
-  #*-*-- species //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Species
-  #*-*-- affected_status //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/AffectedStatus
-  #*-*-- number_tested //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/NumberTested
-  #*-*-- method_type //ClinVarSet/ClinVarAssertion/ObservedIn/Method/MethodType
-  #*-*-- observed_data //ClinVarSet/ClinVarAssertion/ObservedIn/ObservedData
+    #*-* observations  GenboreeKB Place Holder
+    #*-*-  sample_id GenboreeKB Place Holder
+    #*-*-- origin  //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Origin
+    #*-*-- species //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/Species
+    #*-*-- affected_status //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/AffectedStatus
+    #*-*-- number_tested //ClinVarSet/ClinVarAssertion/ObservedIn/Sample/NumberTested
+    #*-*-- method_type //ClinVarSet/ClinVarAssertion/ObservedIn/Method/MethodType
+    #*-*-- observed_data //ClinVarSet/ClinVarAssertion/ObservedIn/ObservedData
     r={
       'observations'=> []
     }
@@ -651,7 +657,7 @@ class ClinVarXMLParser
       }
     end
     @log.info "to be done!"
-    puts r
+    @log.debug r
     return r
 
   end
@@ -691,7 +697,7 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
+    @log.debug r
     return r
     r = {}
   end
@@ -711,7 +717,7 @@ class ClinVarXMLParser
       'diseases'=> []
     }
     names = get('./TraitSet[@Type="Disease"]/Trait[@Type="Disease"]')
-      @log.debug "Got #{names.length} diseases in scvs"
+    @log.debug "Got #{names.length} diseases in scvs"
     names.each do |s|
       @log.debug s.inspect
       disease_names = get_by_doc(s, './Name')
@@ -719,10 +725,10 @@ class ClinVarXMLParser
       n = []
       disease_names.each do |disease_name|
         n << {
-        'name_id'=>{
-          'type'=>get_doc_value(disease_name, './ElementValue/@Type'),
-          'name'=>get_doc_value(disease_name, './ElementValue')
-        }
+          'name_id'=>{
+            'type'=>get_doc_value(disease_name, './ElementValue/@Type'),
+            'name'=>get_doc_value(disease_name, './ElementValue')
+          }
         }
       end
 
@@ -733,7 +739,7 @@ class ClinVarXMLParser
       }
     end
     @log.info "to be done!"
-    puts r
+    @log.debug r
     return r
     r = {}
     {}
@@ -743,13 +749,12 @@ class ClinVarXMLParser
     print_log(@empty_log,"The following paths yielded empty values")
   end
 
-  def initialize(file)
-    @file = file
-    @pp = XpathParser.new(XpathParser::open_with_nokogiri(file))
-    @clinvar_set = @pp.get('/ReleaseSet/ClinVarSet')
+  def initialize(nokogiri_obj)
+    @file = 'test_file'
+    @pp = XpathParser.new(nokogiri_obj)
+    @clinvar_set = @pp.get('/ClinVarSet')
     @log = Logging.logger(STDERR)
     @log.level = :info
-    @log.info 'XML file parsing done'
     @h = {}
     @nil_log= []
     @empty_log= []
