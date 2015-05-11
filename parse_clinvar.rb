@@ -5,15 +5,14 @@
 #
 #
 #
-require_relative 'clinvar_xml_parser'
+require_relative 'clinvar_tokenized_parser'
 require 'progressPrinter'
 require 'logging'
 require 'para_check'
 
 ParaCheck.require(1, 'clinvar.file.xml')
 
-pp= ClinVarXMLParser.new(ARGV[0])
+pp= ClinVarXMLTokenizedParser.new(ARGV[0])
 pp.run
-pp.print_stats
 
 
