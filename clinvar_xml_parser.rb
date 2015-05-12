@@ -114,6 +114,12 @@ class ClinVarXMLParser
     }
     samples = get('./ReferenceClinVarAssertion/ObservedIn')
     samples.each do |s|
+      methods = get_by_doc(s, './Method/MethodType')
+      mt = []
+      methods.each do |method|
+        mt << {'method_type_id'=>{'method'=>get_doc_value(method, '.')}}  
+      end
+
       @log.debug "sample:#{s}"
       r['observations'] << {
         'sample_id'=>{
@@ -121,7 +127,7 @@ class ClinVarXMLParser
           'species'=>get_doc_value(s,'./Sample/Species'),
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
-          'method_type'=>get_doc_value(s,'./Method/MethodType'),
+          'method_types'=>mt,
           'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
         }
       }
@@ -136,7 +142,6 @@ class ClinVarXMLParser
     old_cc = @cc #TODO: REALLY INSTRUSIVE!!!!
     alleles.each do |allele|
       @cc = XpathParser.new(allele)
-      puts allele
       r = get_allele_basic_info
       r = get_molecuar_consequence.merge(r)
       r = get_locations.merge(r)
@@ -165,7 +170,6 @@ class ClinVarXMLParser
       'cross_reference'=> []
     }
     references = get('./XRef')
-    puts references
     references.each do |s|
       @log.debug "reference:#{s}"
       r['cross_reference'] << {
@@ -192,7 +196,6 @@ class ClinVarXMLParser
       'hgvs'=> []
     }
     hgvs = get("./AttributeSet/Attribute[starts-with(@Type, 'HGVS')]")
-    puts hgvs
     hgvs.each do |s|
       @log.debug "hgvs:#{s}"
       r['hgvs'] << {
@@ -290,7 +293,7 @@ class ClinVarXMLParser
     #*--  gene  GenboreeKB Place Holder
     #*--- name  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]
     #*--- symbol  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]
-    
+
     h = {'genes'=>[]}
     genes = get('./MeasureRelationship[@Type="variant in gene"]')
     old_cc = @cc

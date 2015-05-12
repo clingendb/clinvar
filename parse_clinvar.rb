@@ -15,4 +15,3 @@ ParaCheck.require(1, 'clinvar.file.xml')
 pp= ClinVarXMLTokenizedParser.new(ARGV[0])
 pp.run
 
-
