@@ -8,7 +8,6 @@
 require_relative 'clinvar_xml_parser'
 require 'progressPrinter'
 require 'logging'
-require 'para_check'
 require 'nokogiri'
 
 class ClinVarXMLTokenizedParser
@@ -23,6 +22,7 @@ class ClinVarXMLTokenizedParser
     @clinvar_set_ids = []
     @KEY1 = '<ClinVarSet'
     @KEY2 = '/ClinVarSet'
+    @lines_buffer = ''
   end
 
   def get_clinvar_set_locs_and_ids
@@ -58,28 +58,27 @@ class ClinVarXMLTokenizedParser
     line_cnt = 1
     start_l_loc =  @start_line_no[line_loc_ind]
     end_l_loc =  @end_line_no[line_loc_ind]
-    lines_buffer = ''
 
     @file.each_line do |line|
       if line_cnt >= start_l_loc && line_cnt <= end_l_loc 
-        lines_buffer += line
+        @lines_buffer += line
       elsif line_cnt > end_l_loc
         line_loc_ind += 1
         if line_loc_ind >= @start_line_no.length
           @log.debug "Useful lines ends at #{end_l_loc}"
-          return
+          break
         end
         start_l_loc =  @start_line_no[line_loc_ind]
         end_l_loc =  @end_line_no[line_loc_ind]
-    #    @log.info "Progress: #{dp.get_progress($stderr, line_loc_ind)}%"
-        @log.warn "Parsing clinvarset: #{@clinvar_set_ids[line_loc_ind]}"
-        parse lines_buffer
-        lines_buffer = ''
+        @log.info "Progress: #{dp.get_progress($stderr, line_loc_ind)}%"
+        @log.warn "Parsing clinvarset: #{@clinvar_set_ids[line_loc_ind - 1]}"
+        parse @lines_buffer
+        @lines_buffer = ''
       end
       line_cnt += 1
     end
     
-    parse lines_buffer
+    parse @lines_buffer
 
   end
 end
