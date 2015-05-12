@@ -41,18 +41,18 @@ class ClinVarXMLParser
     @clinvar_set.each_with_index do |clinvar,i|
       @cc = XpathParser.new(clinvar)
       r={}
-#       r = get_basic_info.merge(r)
+      r = get_basic_info.merge(r)
       @log.debug "after merging basic info:"+r.to_json
- #      r = get_clinical_significance.merge(r)
+      r = get_clinical_significance.merge(r)
       @log.debug "after merging clinical significance:"+r.to_json
-  #     r = get_observations.merge(r)
+      r = get_observations.merge(r)
       @log.debug "after merging observations:"+r.to_json
       @log.level =:debug
       r = get_alleles.merge(r)
       @log.debug "after merging alleles :"+r.to_json
-   #   r = get_diseases.merge(r)
+      r = get_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
-    #  r = get_scvs.merge(r)
+      r = get_scvs.merge(r)
       @log.info "Final json:"+r.to_json
       save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
       dp.printProgress($stderr,i)
@@ -287,13 +287,26 @@ class ClinVarXMLParser
   end
 
   def get_genes
-    @log.info "You need to take care of multiple genes!!!!!"
-    @log.info "You need to take care of multiple genes!!!!!"
-    #get_gene_comments.merge(r)
-    r = get_gene_misc
-    r['gene']['locations'] = get_gene_locations['locations']
-    #r = get_gene_cross_references.merge(r)
-    return r
+    #*--  gene  GenboreeKB Place Holder
+    #*--- name  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]
+    #*--- symbol  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]
+    
+    h = {'genes'=>[]}
+    genes = get('./MeasureRelationship[@Type="variant in gene"]')
+    old_cc = @cc
+    genes.each do |gene|
+      @cc = XpathParser.new(gene)
+      r = {}
+      r['name'] = get_value('./Name/ElementValue[@Type="Preferred"]')
+      r['symbol'] = get_value('./Symbol/ElementValue[@Type="Preferred"]')
+      @log.info "not finished in the gene part yet"
+      # get_gene_comments.merge(r)
+      r = get_gene_locations.merge(r)
+      #r = get_gene_cross_references.merge(r)
+      h['genes'] << {'gene_id'=>r}
+    end
+    @cc = old_cc
+    return h
   end
 
   def get_gene_locations
@@ -309,9 +322,7 @@ class ClinVarXMLParser
     r={
       'locations'=> []
     }
-    references = get('./MeasureRelationship[@Type="variant in gene"]/SequenceLocation')
-    @log.info "U sure u want use get_doc_value?"
-    @log.info "U sure u want use get_doc_value?"
+    references = get('./SequenceLocation')
     references.each do |s|
       @log.debug "location:#{s}"
       r['locations'] << {
@@ -379,18 +390,6 @@ class ClinVarXMLParser
     end
     @log.debug r
 
-    return r
-  end
-
-  def get_gene_misc
-    #*--  gene  GenboreeKB Place Holder
-    #*--- name  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]
-    #*--- symbol  //ClinVarSet/ReferenceClinVarAssertion/MeasureSet/Measure/MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]
-    r = {'gene'=>{}}
-    r['gene']['name'] = get_value('./MeasureRelationship[@Type="variant in gene"]/Name/ElementValue[@Type="Preferred"]')
-    r['gene']['symbol'] = get_value('./MeasureRelationship[@Type="variant in gene"]/Symbol/ElementValue[@Type="Preferred"]')
-
-    @log.debug r
     return r
   end
 
