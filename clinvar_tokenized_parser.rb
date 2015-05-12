@@ -44,6 +44,7 @@ class ClinVarXMLTokenizedParser
   def parse str
     pp = ClinVarXMLParser.new(Nokogiri::XML(str))#TODO: should be moved into CLinVarxmlparser
     pp.run
+    pp.print_stats
   end
 
   def run
