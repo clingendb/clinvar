@@ -26,6 +26,10 @@ class ClinVarXMLParser
     @id = 1
   end
 
+  def get_clinvar_set_id
+      @current_clinvar_set_id = get_value('./@ID')
+  end
+
   def run
     if @clinvar_set.length < 1
       @log.info "No docs found in\n"+@file
@@ -40,7 +44,9 @@ class ClinVarXMLParser
     dp = ProgressPrinter.new(@clinvar_set.length)
     @clinvar_set.each_with_index do |clinvar,i|
       @cc = XpathParser.new(clinvar)
+      get_clinvar_set_id
       r={}
+      begin
       r = get_basic_info.merge(r)
       @log.debug "after merging basic info:"+r.to_json
       r = get_clinical_significance.merge(r)
@@ -53,6 +59,14 @@ class ClinVarXMLParser
       r = get_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
       r = get_scvs.merge(r)
+      rescue
+        $stderr.puts '*'*128
+        $stderr.puts "Error found for clinvarset:#{@current_clinvar_set_id}"
+        $stderr.puts $!
+        $stderr.puts "This record is now skipped"
+        $stderr.puts '*'*128
+        next
+      end
       @log.info "Final json:"+r.to_json
       save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
       dp.printProgress($stderr,i)
