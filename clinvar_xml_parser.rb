@@ -1,4 +1,4 @@
-# Parse all clinvar data
+#Parse all clinvar data
 # 
 # @Author Xin Feng
 # @Date 04/06/2015
@@ -657,14 +657,20 @@ class ClinVarXMLParser
     r={
       'observations'=> []
     }
+    @log.info "fix the method type and observed_data part"
     names = get('./ObservedIn')
     names.each do |s|
+      methods = get_by_doc(s, './Method/MethodType')
+      mt = []
+      methods.each do |method|
+        mt << {'method_type_id'=>{'method'=>get_doc_value(method, '.')}}  
+      end
       r['observations'] << {
         'sample_id'=>{
           'origin'=>get_doc_value(s,'./Sample/Origin'),
           'species'=>get_doc_value(s,'./Sample/Species'),
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
-          'method_type'=>get_doc_value(s,'./Method/MethodType'),
+          'method_type'=>mt,
           # 'observed_data'=>get_doc_value(s,'./ObservedData'), #TODO: This is perhaps an array!
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
         }
