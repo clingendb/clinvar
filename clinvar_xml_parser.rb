@@ -112,6 +112,7 @@ class ClinVarXMLParser
     r={
       'observations'=> []
     }
+    @log.info "Fix the observed_data part"
     samples = get('./ReferenceClinVarAssertion/ObservedIn')
     samples.each do |s|
       methods = get_by_doc(s, './Method/MethodType')
@@ -128,7 +129,7 @@ class ClinVarXMLParser
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
           'method_types'=>mt,
-          'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
+          # 'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
         }
       }
     end
@@ -180,7 +181,6 @@ class ClinVarXMLParser
         }
       }
     end
-    puts r
     return r
   end
 
@@ -209,7 +209,6 @@ class ClinVarXMLParser
     r['type'] = get_value('./@Type')
     r['name'] = get_value('./Name/ElementValue[@Type="Preferred"]')
     r['genbank_location'] = get_value('./AttributeSet/Attribute[@Type = "Location"]')
-    puts r
 
     return r
   end
