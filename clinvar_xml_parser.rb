@@ -47,18 +47,18 @@ class ClinVarXMLParser
       get_clinvar_set_id
       r={}
       begin
-      r = get_basic_info.merge(r)
-      @log.debug "after merging basic info:"+r.to_json
-      r = get_clinical_significance.merge(r)
-      @log.debug "after merging clinical significance:"+r.to_json
-      r = get_observations.merge(r)
-      @log.debug "after merging observations:"+r.to_json
-      @log.level =:debug
-      r = get_alleles.merge(r)
-      @log.debug "after merging alleles :"+r.to_json
-      r = get_diseases.merge(r)
-      @log.debug "after merging diseases:"+r.to_json
-      r = get_scvs.merge(r)
+        r = get_basic_info.merge(r)
+        @log.debug "after merging basic info:"+r.to_json
+        r = get_clinical_significance.merge(r)
+        @log.debug "after merging clinical significance:"+r.to_json
+        r = get_observations.merge(r)
+        @log.debug "after merging observations:"+r.to_json
+        @log.level =:debug
+        r = get_alleles.merge(r)
+        @log.debug "after merging alleles :"+r.to_json
+        r = get_diseases.merge(r)
+        @log.debug "after merging diseases:"+r.to_json
+        r = get_scvs.merge(r)
       rescue
         $stderr.puts '*'*128
         $stderr.puts "Error found for clinvarset:#{@current_clinvar_set_id}"
@@ -68,7 +68,7 @@ class ClinVarXMLParser
         next
       end
       @log.info "Final json:"+r.to_json
-      save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
+      #save_json(to_kb_json(r),@file+"_"+i.to_s+".json")
       dp.printProgress($stderr,i)
       if i == 100
         @log.info "program quited at 100th file"
