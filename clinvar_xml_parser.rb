@@ -719,7 +719,7 @@ class ClinVarXMLParser
     r={
       'observations'=> []
     }
-    @log.info "fix the method type and observed_data part"
+    @log.info "fix the method type and observed_data parq"
     names = get('./ObservedIn')
     names.each do |s|
       methods = get_by_doc(s, './Method/MethodType')

@@ -11,6 +11,16 @@ require 'nokogiri'
 
 filler = RecursiveFiller.new()
 xml = Nokogiri::XML(File.open(ARGV[0]))
-h = {"clinical_sig,/ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance"=>{'assertion'=>"./Description"}}
+h = {"clinical_sig,/ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance"=>{'assertion'=>"./Description"},
+     'observations,sample_id,/ClinVarSet/ReferenceClinVarAssertion/ObservedIn'=>[
+       {'origin'=>'./Sample/Origin'},
+       {'method_types,method_type_id,./Method/MethodType'=>[{'method'=>'.'}]}
+]
+}
+#h = { 'observations,sample_id,/ClinVarSet/ReferenceClinVarAssertion/ObservedIn'=>[
+#       {'origin'=>'./Sample/Origin'},
+ #      {'method_types,method_type_id,./Method/MethodType'=>[{'method'=>'.'}]}
+#]
+#}
 puts filler.fill(xml,h)
 
