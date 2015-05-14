@@ -80,7 +80,7 @@ class ClinVarXMLParser
 
   def get_basic_info
     r = {'title'=>get_value('./Title'),
-         'variant_id'=> get_value('./ReferenceClinVarAssertion/MeasureSet/@ID'),
+         'clinvar_variant_id'=> get_value('./ReferenceClinVarAssertion/MeasureSet/@ID'),
          'record_status'=>get_value('./RecordStatus'),
          'record_dates'=>
     {'date_created'=>get_value('./ReferenceClinVarAssertion/@DateCreated'),
@@ -356,7 +356,6 @@ class ClinVarXMLParser
       }
     end
 
-    r['cytogenetic_location'] = get_value('./CytogeneticLocation')
     @log.debug r
     return r
 
@@ -610,7 +609,7 @@ class ClinVarXMLParser
   def get_scvs
     scvs = get('./ClinVarAssertion')
     @log.debug "got #{scvs.length} scvs"
-    h = {'clinvar_assertions'=>[]}
+    h = {'submissions'=>[]}
     scvs.each do |scv|
       @cc = XpathParser.new(scv) #TODO: This is really instrusive
       r = get_scv_submission_info
@@ -621,7 +620,7 @@ class ClinVarXMLParser
       @log.debug "after merging alleles:"+r.to_json
       r = get_scv_diseases.merge(r)
       @log.debug "after merging diseases:"+r.to_json
-      h['clinvar_assertions'] << {'clinvar_assertion_id'=>r}
+      h['submissions'] << {'submission_id'=>r}
     end
     return h
   end
