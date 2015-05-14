@@ -80,6 +80,7 @@ class ClinVarXMLParser
 
   def get_basic_info
     r = {'title'=>get_value('./Title'),
+         'variant_id'=> get_value('./ReferenceClinVarAssertion/MeasureSet/@ID'),
          'record_status'=>get_value('./RecordStatus'),
          'record_dates'=>
     {'date_created'=>get_value('./ReferenceClinVarAssertion/@DateCreated'),
@@ -151,54 +152,6 @@ class ClinVarXMLParser
     return r
   end
 
-  def fill_simple_fields(xml, h)
-    result = {}
-    h.each do |k,xpath|
-      result[k] = get_doc_value(xml, xpath)
-    end
-    return result
-  end
-
-  def fill_array(xml,xpath,item_id,item_hash)
-    mt = []
-    s = xml
-    methods = get_by_doc(s, xpath)
-    methods.each do |method|
-      item_details = fill_simple_fields(method,item_hash)
-      mt << {item_id =>fill_simple_fields}  
-    end
-    return mt
-  end
-
-  def fill_fields_with_nested_fields
-    root = 'observations'
-    root_xpath = './ReferenceClinVarAssertion/ObservedIn'
-    r={ root => [] }
-    samples = get(root_xpath)
-    samples.each do |s|
-
-      methods = get_by_doc(s, './Method/MethodType')
-      mt = []
-      methods.each do |method|
-        mt << {'method_type_id'=>{'method'=>get_doc_value(method, '.')}}  
-      end
-
-      fill_array
-      @log.debug "sample:#{s}"
-      r['observations'] << {
-        'sample_id'=>{
-          'origin'=>get_doc_value(s,'./Sample/Origin'),
-          'species'=>get_doc_value(s,'./Sample/Species'),
-          'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
-          'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
-          'method_types'=>mt,
-          # 'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
-        }
-      }
-    end
-    @log.debug r
-    return r
-  end
   def get_alleles
     alleles = get('./ReferenceClinVarAssertion/MeasureSet/Measure')
     h = {'alleles'=>[]}
@@ -269,6 +222,7 @@ class ClinVarXMLParser
     end
 
     r['type'] = get_value('./@Type')
+    r['clinvar_allele_id'] = get_value('./@ID')
     r['name'] = get_value('./Name/ElementValue[@Type="Preferred"]')
     r['genbank_location'] = get_value('./AttributeSet/Attribute[@Type = "Location"]')
 

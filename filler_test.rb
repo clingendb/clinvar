@@ -5,7 +5,7 @@
 #
 #
 #
-require_relative 'recursive_filler'
+require 'recursive_filler'
 require 'para_check'
 require 'nokogiri'
 
@@ -22,5 +22,5 @@ h = {"clinical_sig,/ClinVarSet/ReferenceClinVarAssertion/ClinicalSignificance"=>
  #      {'method_types,method_type_id,./Method/MethodType'=>[{'method'=>'.'}]}
 #]
 #}
-puts filler.fill(xml,h)
+puts "final json:\n"+filler.fill(xml,h).inspect
 
