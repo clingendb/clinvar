@@ -685,7 +685,7 @@ class ClinVarXMLParser
           'origin'=>get_doc_value(s,'./Sample/Origin'),
           'species'=>get_doc_value(s,'./Sample/Species'),
           'affected_status'=>get_doc_value(s,'./Sample/AffectedStatus'),
-          'method_type'=>mt,
+          'method_types'=>mt,
           # 'observed_data'=>get_doc_value(s,'./ObservedData'), #TODO: This is perhaps an array!
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
         }
