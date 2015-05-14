@@ -59,10 +59,12 @@ class ClinVarXMLParser
         r = get_diseases.merge(r)
         @log.debug "after merging diseases:"+r.to_json
         r = get_scvs.merge(r)
-      rescue
+      rescue Exception=>e
         $stderr.puts '*'*128
         $stderr.puts "Error found for clinvarset:#{@current_clinvar_set_id}"
         $stderr.puts $!
+        $stderr.puts e.backtrace
+
         $stderr.puts "This record is now skipped"
         $stderr.puts '*'*128
         next
@@ -145,11 +147,25 @@ class ClinVarXMLParser
           'number_tested'=>get_doc_value(s,'./Sample/NumberTested'),
           'method_types'=>mt,
           # 'observed_data'=>get_doc_value(s,'./ObservedData/Attribute/@integerValue')
+          'number_of_observations'=>get_num_of_observations(s)
         }
       }
     end
     @log.debug r
     return r
+  end
+
+  def get_num_of_observations(xml)
+    ga = XpathParser.new(xml)
+    s1 = ga.sum('//ObservedData/Attribute[@Type="NumFamiliesWithVariant"]/@integerValue')
+    s2 = ga.sum('//ObservedData/Attribute[@Type="IndependentObservations"]/@integerValue')
+    s3 = ga.sum('//ObservedData/Attribute[@Type="VariantAlleles"]/@integerValue')
+    all = [s1,s2,s3]
+    max = 0
+    all.each do |s|
+      max = s unless (s.nil? or s < max ) 
+    end
+    return max
   end
 
   def get_alleles
