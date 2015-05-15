@@ -36,8 +36,8 @@ class  KBModelToClinVarParserJson
 
         prefix2,field2,xpath2 = next_line.split("\t")
         h = []
-        groups = get_rootline_subgroups(root_line,lines)
-        puts "got gropus:"+groups.size.to_i
+        groups = get_rootline_subgroups(next_line,lines)
+        puts "got gropus:"+groups.size.to_s
         groups.each do |group|
           h << process(group)
         end
