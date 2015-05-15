@@ -17,19 +17,22 @@ class  KBModelToClinVarParserJson
     puts "Uncomment this line in production"
     puts "Uncomment this line in production"
     puts "Uncomment this line in production"
-    #lines.shift # Skip the root elemnt? #TODO
     return process_root(lines)
   end
 
   def process_root(lines)
     r = {}
+    root_line = lines.shift
+    
+    prefix,field,xpath = root_line.split("\t")
+    
     root_groups = find_root_groups(lines)
     puts "total root groups #{root_groups.size}"
     root_groups.each do |root_group|
       puts "current root_group:"+root_group.inspect
       r = process(root_group).merge(r)
     end
-    return r
+    return {"#{field},#{xpath}"=>r}
   end
 
   def find_root_groups(sublines)
