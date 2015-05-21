@@ -38,7 +38,7 @@
 *--	clinvar_allele_id	./@ID	
 *--	type	./@Type	
 *--	name	./Name/ElementValue[@Type="Preferred"]	
-*--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
+# *--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
 *-*	cross_reference	./XRef/@DB	
 *-*-	cross_reference_id	GenboreeKB Place Holder	
 *-*--	db_name	./XRef/@DB	
@@ -196,7 +196,7 @@
 #	MeasureSet		
 *-*	alleles	./MeasureSet/Measure	
 *-*-	allele_id	GenboreeKB Place Holder	
-*-*--	nucleotide_change	./AttributeSet/Attribute[@Type = "nucleotide change"]	
+# *-*--	nucleotide_change	./AttributeSet/Attribute[@Type = "nucleotide change"]	
 *-*--	gene	./MeasureRelationship[@Type="variant in gene"]	
 *-*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type, "HGVS")]	
 *-*-*-	hgvs_id	GenboreeKB Place Holder	
