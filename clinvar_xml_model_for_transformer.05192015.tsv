@@ -1,0 +1,217 @@
+#name		XML Path	Issues
+**	DocumentID	//ClinVarSet	
+#	Basic		
+-	title	./Title	
+-	record_status	./RecordStatus	
+-	record_dates	./ReferenceClinVarAssertion	
+--	date_created	./@DateCreated	
+--	date_last_updated	./@DateLastUpdated	
+-	rcv_accession	./ReferenceClinVarAssertion/ClinVarAccession	
+--	accession	./@Acc	
+--	date_updated	./@DateUpdated	
+--	rcv_version	./@Version	
+#	Clinical		
+-	clinical_significance	./ReferenceClinVarAssertion/ClinicalSignificance	
+--	date_last_evaluated	./@DateLastEvaluated	
+--	review_status	./ReviewStatus	
+--	assertion	./Description	
+-	assertion_type	./ReferenceClinVarAssertion/Assertion/@Type	
+#	ObservedIn		
+*	observations	./ReferenceClinVarAssertion/ObservedIn	
+*-	sample_id	GenboreeKB Place Holder	
+*--	sample_info	./Sample	
+*---	origin	./Origin	
+*---	species	./Species	
+*---	affected_status	./AffectedStatus	
+*---	number_tested	./NumberTested	
+*-*	method_types	./Method/MethodType	
+*-*-	method_type_id	GenboreeKB Place Holder	
+*-*--	method	.	
+*-*	observed_data	./ObservedData	
+*-*-	observed_data_id	GenboreeKB Place Holder	
+*-*--	data	./Attribute	
+#	MeasureSet Information		
+-	clinvar_variant_id	./ReferenceClinVarAssertion/MeasureSet/@ID	should we limit the type to be "variant"?
+#	MeasureSet		
+*	alleles	./ReferenceClinVarAssertion/MeasureSet/Measure	
+*-	allele_id	GenboreeKB Place Holder	
+*--	clinvar_allele_id	./@ID	
+*--	type	./@Type	
+*--	name	./Name/ElementValue[@Type="Preferred"]	
+*--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
+*-*	cross_reference	./XRef/@DB	
+*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*--	db_name	./XRef/@DB	
+*-*--	db_id	./XRef/@ID	
+*-*--	type	./XRef/@Type	
+*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type,"HGVS")]	
+*-*-	hgvs_id	GenboreeKB Place Holder	
+*-*--	type	./@Type	
+*-*--	value	.	
+##	Molecular		
+*-*	molecular_consequences	./AttributeSet/Attribute[@Type = "MolecularConsequence"]	
+*-*-	molecular_consequence_id	GenboreeKB Place Holder	
+*-*--	value	.	
+*-*-*	cross_reference	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+##	Locations		
+*--	cytogenetic_location	./CytogeneticLocation	
+*-*	sequence_locations	./SequenceLocation	
+*-*-	location_id	GenboreeKB Place Holder	
+*-*--	assembly	./@Assembly	
+*-*--	chr	./@Chr	
+*-*--	accession	./@Accession	
+*-*--	start	./@start	
+*-*--	stop	./@stop	
+*-*--	length	./@variantLength	
+*-*--	reference_allele	./@referenceAllele	
+*-*--	alternative_allele	./@alternateAllele	
+##	Gene		
+*-*	genes	./MeasureRelationship[@Type="variant in gene"]	
+*-*-	gene_id	GenboreeKB Place Holder	
+*-*--	name	./Name/ElementValue[@Type="Preferred"]	
+*-*--	symbol	./Symbol/ElementValue[@Type="Preferred"]	
+*-*-*	locations	./SequenceLocation	
+*-*-*-	location_id	GenboreeKB Place Holder	
+*-*-*--	status	./@Status	
+*-*-*--	chr	./@Chr	
+*-*-*--	assembly	./@Assembly	
+*-*-*--	accession	./@Accession	
+*-*-*--	start	./@start	
+*-*-*--	stop	./@stop	
+*-*-*--	strand	./@Strand	
+*-*-*	cross_references	./XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*-*	comment	./Comment	
+*-*-*-	comment_id	GenboreeKB Place Holder	
+*-*-*--	text	.	
+*-*-*--	data_source	./@DataSource	
+*-*-*--	type	./@Type	
+#	Diseases		
+*	diseases	./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]	
+*-	disease_id	GenboreeKB Place Holder	
+*-*	names	./Name	
+*-*-	name_id	GenboreeKB Place Holder	
+*-*--	type	./ElementValue/@Type	
+*-*--	name	./ElementValue	
+*-*-*	cross_references	./Name/XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	symbols	./Symbol	
+*-*-	symbol_id	GenboreeKB Place Holder	
+*-*--	type	./ElementValue/@Type	
+*-*--	symbol	./ElementValue	
+*-*-*	cross_references	./XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	public_definitions	./AttributeSet/Attribute[@Type="public definition"]	
+*-*-	public_definition_id	GenboreeKB Place Holder	
+*-*--	public_definition	.	
+*-*-*	cross_references	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	modes_of_inheritance	./AttributeSet/Attribute[@Type="ModeOfInheritance"]	
+*-*-	mode_of_inheritance_id	GenboreeKB Place Holder	
+*-*--	mode_of_inheritance	.	
+*-*-*	cross_references	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	ages_of_onset	./AttributeSet/Attribute[@Type="age of onset"]	
+*-*-	age_of_onset_id	GenboreeKB Place Holder	
+*-*--	age_of_onset	.	
+*-*-*	cross_references	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	mechanisms_of_disease	./AttributeSet/Attribute[@Type="disease mechanism"]	
+*-*-	mechanism_of_disease_id	GenboreeKB Place Holder	
+*-*--	mechanism_of_disease	.	
+*-*-*	cross_references	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	prevalance	./AttributeSet/Attribute[@Type="prevalance"]	
+*-*-	prevalance_id	GenboreeKB Place Holder	
+*-*--	prevalance	.	
+*-*-*	cross_references	./following-sibling::XRef	
+*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*--	db_name	./@DB	
+*-*-*--	db_id	./@ID	
+*-*-*--	type	./@Type	
+*-*	citations	./Citation	
+*-*-	citation_id	GenboreeKB Place Holder	
+*-*--	text	./@Abbrev	
+*-*--	type	./@Type	
+*-*--	source	./ID/@Source	
+*-*--	id	./Citation/ID	
+*-*--	url	./Citation/URL	
+#	SCVs		
+*	submissions	./ClinVarAssertion	
+*-	submission_id	GenboreeKB Place Holder	
+*--	submission_info	./ClinVarSubmissionID	
+*---	submitter	./@submitter	
+*---	title	./@title	
+*---	submitter_date	./@submitterDate	
+*--	clinvar_accession	./ClinVarAccession	
+*---	scv_accession	./@Acc	
+*---	version	./@Version	
+*---	org_id	./@OrgID	
+*---	date_updated	./@DateUpdated	
+*--	record_status	./RecordStatus	
+*--	clinical_significance	./ClinicalSignificance	
+*---	date_last_evaluated	./@DateLastEvaluated	
+*---	review_status	./ReviewStatus	
+*---	assertion	./Description	
+*--	assertion_type	./Assertion/@Type	
+#	ObservedIn		
+*-*	observations	./ObservedIn	
+*-*-	sample_id	GenboreeKB Place Holder	
+*-*--	sample_info	./Sample	
+*-*---	origin	./Origin	
+*-*---	species	./Species	
+*-*---	affected_status	./AffectedStatus	
+*-*---	number_tested	./NumberTested	
+*-*-*	method_types	./Method/MethodType	
+*-*-*-	method_type_id	GenboreeKB Place Holder	
+*-*-*--	method	.	
+*-*-*	observed_data	./ObservedData	
+*-*-*-	observed_data_id	GenboreeKB Place Holder	
+*-*-*--	data	.	
+#	MeasureSet		
+*-*	alleles	./MeasureSet/Measure	
+*-*-	allele_id	GenboreeKB Place Holder	
+*-*--	nucleotide_change	./AttributeSet/Attribute[@Type = "nucleotide change"]	
+*-*--	gene	./MeasureRelationship[@Type="variant in gene"]	
+*-*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type, "HGVS")]	
+*-*-*-	hgvs_id	GenboreeKB Place Holder	
+*-*-*--	type	./@Type	
+*-*-*--	value	.	
+*-*--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
+#	TraitSet		
+*-*	diseases	./TraitSet[@Type="Disease"]/Trait[@Type="Disease"]	
+*-*-	disease_id	GenboreeKB Place Holder	
+*-*-*	names	./Name	
+*-*-*-	name_id	GenboreeKB Place Holder	
+*-*-*--	type	./ElementValue/@Type	
+*-*-*--	name	./ElementValue	
+*-*-*-*	cross_reference	./XRef	
+*-*-*-*-	cross_reference_id	GenboreeKB Place Holder	
+*-*-*-*--	db_name	./@DB	
+*-*-*-*--	db_id	./@ID	
+*-*-*-*--	type	./@Type	
