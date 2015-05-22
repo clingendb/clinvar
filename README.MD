@@ -1,0 +1,1 @@
+A toolset to help transform ClinVar's xml release into jsons.
