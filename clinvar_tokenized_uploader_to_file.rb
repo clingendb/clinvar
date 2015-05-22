@@ -32,16 +32,11 @@ class ClinVarXMLTokenizedUploaderToFile < ClinVarXMLTokenizedUploader
 
     xml = Nokogiri::XML(str)
     filler = RecursiveFiller.new()
-    puts "TODO: Fix these constants"
     ga = JsonToKB.new('DocumentID',@id)
     id_adder = AutoRandStrID.new()
     id_adder.setPreAndPostfix('snp','id')
     hash = filler.fill(xml,@h)['DocumentID']
     filler.report_nil_and_empty_paths
-    puts "TODO: Fix this part"
-    hash['observations'].each do |ar|
-      ar['sample_id']['number_of_observations'] = 0
-    end
     json= id_adder.modifyIDs(ga.to_kb(hash))
     json = RemoveEmptyAndNilKB.process(json)
     @jsons << json
@@ -82,7 +77,7 @@ class ClinVarXMLTokenizedUploaderToFile < ClinVarXMLTokenizedUploader
     end
 
     parse @lines_buffer
-
+    output_jsons if @jsons.length > 0
   end
   private
   def determine_buffer_size
@@ -95,14 +90,18 @@ class ClinVarXMLTokenizedUploaderToFile < ClinVarXMLTokenizedUploader
     "#{@filename}_#{@result_file_id}.json"
   end
 
+  def output_jsons
+    fileName = getNextResultFileName
+    @log.info "Saved #{@jsons.length} docs into "+fileName
+    File.open(fileName, "wb") do |f|
+      f.write(@jsons.to_json)
+    end
+    @jsons = []
+  end
+
   def  output_json_if_reach_size_limit
     if @jsons.length > @buffer_size
-      fileName = getNextResultFileName
-      @log.info "Saved #{@jsons.length} docs into "+fileName
-      File.open(fileName, "wb") do |f|
-        f.write(@jsons.to_json)
-      end
-      @jsons = []
+      output_jsons
     end
   end
 
