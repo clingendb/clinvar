@@ -20,7 +20,7 @@ class ClinVarXMLTokenizedUploader
     @file = File.open(clinvar_xml_file,'rb')
     @h = JSON.parse(File.read(model_json))
     @log = Logging.logger[self]
-    @log.level = :debug
+    @log.level = :info
     @clinvar_set_locs = []
     @start_line_no =  []
     @end_line_no =  []
@@ -29,7 +29,9 @@ class ClinVarXMLTokenizedUploader
     @KEY1 = '<ClinVarSet'
     @KEY2 = '/ClinVarSet'
     @lines_buffer = ''
-    @id = 1
+    @id = 31027
+    $stderr.puts "*****************The starting id is set to be#{@id}"
+    puts "*****************The starting id is set to be#{@id}"
   end
 
   def get_clinvar_set_locs_and_ids
@@ -48,28 +50,35 @@ class ClinVarXMLTokenizedUploader
     @file.rewind
   end
 
+  def configure_api(group,kb,coll)
+    @group = group
+    @kb = kb
+    @coll = coll
+    @api_ready = true
+  end
+
   def parse str
     xml = Nokogiri::XML(str)
     filler = RecursiveFiller.new()
-    puts "TODO: Fix these constants"
     ga = JsonToKB.new('DocumentID',@id)
     id_adder = AutoRandStrID.new()
+    puts "TODO: Fix this post and prefix"
     id_adder.setPreAndPostfix('snp','id')
     uploader = APIUploader.new()
-    uploader.configure("acmg-apiTest","test",'clinvar_xml0.8')
+    raise "Call configure_api first" unless @api_ready
+    uploader.configure(@group,@kb,@coll)
     uploader.set_resource_path("doc/#{@id}?")
     hash = filler.fill(xml,@h)['DocumentID']
     filler.report_nil_and_empty_paths
-    puts "TODO: Fix this part"
-    hash['observations'].each do |ar|
-      ar['sample_id']['number_of_observations'] = 0
-    end
     json= id_adder.modifyIDs(ga.to_kb(hash))
     json = RemoveEmptyAndNilKB.process(json)
     @log.debug "json to be uploaded:\n"+json.to_json
     uploader.upload(json)
     @log.debug uploader.serverStatusMsg
-    @log.warn "Upload failed" unless uploader.uploadSuccessful?
+    if not uploader.uploadSuccessful?
+      @log.warn "Upload failed" if uploader.uploadSuccessful?
+      @log.warn uploader.serverMsg
+    end
     @id += 1
   end
 
@@ -107,5 +116,7 @@ class ClinVarXMLTokenizedUploader
 
     parse @lines_buffer
 
+    $stderr.puts "*****************The starting id is set to be#{@id}"
+    puts "*****************The starting id is set to be#{@id}"
   end
 end

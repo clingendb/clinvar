@@ -39,11 +39,11 @@
 *--	type	./@Type	
 *--	name	./Name/ElementValue[@Type="Preferred"]	
 # *--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
-*-*	cross_reference	./XRef/@DB	
+*-*	cross_reference	./XRef
 *-*-	cross_reference_id	GenboreeKB Place Holder	
-*-*--	db_name	./XRef/@DB	
-*-*--	db_id	./XRef/@ID	
-*-*--	type	./XRef/@Type	
+*-*--	db_name	./@DB	
+*-*--	db_id	./@ID	
+*-*--	type	./@Type	
 *-*	hgvs	./AttributeSet/Attribute[starts-with(@Type,"HGVS")]	
 *-*-	hgvs_id	GenboreeKB Place Holder	
 *-*--	type	./@Type	
@@ -158,9 +158,9 @@
 *-*-	citation_id	GenboreeKB Place Holder	
 *-*--	text	./@Abbrev	
 *-*--	type	./@Type	
-*-*--	source	./ID/@Source	
-*-*--	id	./Citation/ID	
-*-*--	url	./Citation/URL	
+*-*--	id	./ID	
+*-*---	source	./@Source	
+*-*--	url	./URL	
 #	SCVs		
 *	submissions	./ClinVarAssertion	
 *-	submission_id	GenboreeKB Place Holder	

@@ -14,7 +14,7 @@ class ClinVarXMLTokenizedParser
   def initialize(file)
     @file = File.open(file,'rb')
     @log = Logging.logger(STDERR)
-    @log.level = :debug
+    @log.level = :info
     @clinvar_set_locs = []
     @start_line_no =  []
     @end_line_no =  []

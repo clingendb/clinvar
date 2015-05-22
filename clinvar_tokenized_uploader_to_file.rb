@@ -21,6 +21,7 @@ class ClinVarXMLTokenizedUploaderToFile < ClinVarXMLTokenizedUploader
     @id = 1
     @jsons = []
     @result_file_id = 0
+   puts @log.level
   end
 
   def set_buffer_size(size)
