@@ -37,19 +37,19 @@
 *-	allele_id	GenboreeKB Place Holder	
 *--	clinvar_allele_id	./@ID	
 *--	type	./@Type	
-*--	name	./Name/ElementValue[@Type="Preferred"]	
-# *--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
+*--	name	./Name/ElementValue[@Type='Preferred']	
+# *--	genbank_location	./AttributeSet/Attribute[@Type = 'Location']	
 *-*	cross_reference	./XRef
 *-*-	cross_reference_id	GenboreeKB Place Holder	
 *-*--	db_name	./@DB	
 *-*--	db_id	./@ID	
 *-*--	type	./@Type	
-*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type,"HGVS")]	
+*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type,'HGVS')]	
 *-*-	hgvs_id	GenboreeKB Place Holder	
 *-*--	type	./@Type	
 *-*--	value	.	
 ##	Molecular		
-*-*	molecular_consequences	./AttributeSet/Attribute[@Type = "MolecularConsequence"]	
+*-*	molecular_consequences	./AttributeSet/Attribute[@Type = 'MolecularConsequence']	
 *-*-	molecular_consequence_id	GenboreeKB Place Holder	
 *-*--	value	.	
 *-*-*	cross_reference	./following-sibling::XRef	
@@ -70,10 +70,10 @@
 *-*--	reference_allele	./@referenceAllele	
 *-*--	alternative_allele	./@alternateAllele	
 ##	Gene		
-*-*	genes	./MeasureRelationship[@Type="variant in gene"]	
+*-*	genes	./MeasureRelationship[@Type='variant in gene']	
 *-*-	gene_id	GenboreeKB Place Holder	
-*-*--	name	./Name/ElementValue[@Type="Preferred"]	
-*-*--	symbol	./Symbol/ElementValue[@Type="Preferred"]	
+*-*--	name	./Name/ElementValue[@Type='Preferred']	
+*-*--	symbol	./Symbol/ElementValue[@Type='Preferred']	
 *-*-*	locations	./SequenceLocation	
 *-*-*-	location_id	GenboreeKB Place Holder	
 *-*-*--	status	./@Status	
@@ -94,7 +94,7 @@
 *-*-*--	data_source	./@DataSource	
 *-*-*--	type	./@Type	
 #	Diseases		
-*	diseases	./ReferenceClinVarAssertion/TraitSet[@Type="Disease"]/Trait[@Type="Disease"]	
+*	diseases	./ReferenceClinVarAssertion/TraitSet[@Type='Disease']/Trait[@Type='Disease']	
 *-	disease_id	GenboreeKB Place Holder	
 *-*	names	./Name	
 *-*-	name_id	GenboreeKB Place Holder	
@@ -114,7 +114,7 @@
 *-*-*--	db_name	./@DB	
 *-*-*--	db_id	./@ID	
 *-*-*--	type	./@Type	
-*-*	public_definitions	./AttributeSet/Attribute[@Type="public definition"]	
+*-*	public_definitions	./AttributeSet/Attribute[@Type='public definition']	
 *-*-	public_definition_id	GenboreeKB Place Holder	
 *-*--	public_definition	.	
 *-*-*	cross_references	./following-sibling::XRef	
@@ -122,7 +122,7 @@
 *-*-*--	db_name	./@DB	
 *-*-*--	db_id	./@ID	
 *-*-*--	type	./@Type	
-*-*	modes_of_inheritance	./AttributeSet/Attribute[@Type="ModeOfInheritance"]	
+*-*	modes_of_inheritance	./AttributeSet/Attribute[@Type='ModeOfInheritance']	
 *-*-	mode_of_inheritance_id	GenboreeKB Place Holder	
 *-*--	mode_of_inheritance	.	
 *-*-*	cross_references	./following-sibling::XRef	
@@ -130,7 +130,7 @@
 *-*-*--	db_name	./@DB	
 *-*-*--	db_id	./@ID	
 *-*-*--	type	./@Type	
-*-*	ages_of_onset	./AttributeSet/Attribute[@Type="age of onset"]	
+*-*	ages_of_onset	./AttributeSet/Attribute[@Type='age of onset']	
 *-*-	age_of_onset_id	GenboreeKB Place Holder	
 *-*--	age_of_onset	.	
 *-*-*	cross_references	./following-sibling::XRef	
@@ -138,7 +138,7 @@
 *-*-*--	db_name	./@DB	
 *-*-*--	db_id	./@ID	
 *-*-*--	type	./@Type	
-*-*	mechanisms_of_disease	./AttributeSet/Attribute[@Type="disease mechanism"]	
+*-*	mechanisms_of_disease	./AttributeSet/Attribute[@Type='disease mechanism']	
 *-*-	mechanism_of_disease_id	GenboreeKB Place Holder	
 *-*--	mechanism_of_disease	.	
 *-*-*	cross_references	./following-sibling::XRef	
@@ -146,7 +146,7 @@
 *-*-*--	db_name	./@DB	
 *-*-*--	db_id	./@ID	
 *-*-*--	type	./@Type	
-*-*	prevalance	./AttributeSet/Attribute[@Type="prevalance"]	
+*-*	prevalance	./AttributeSet/Attribute[@Type='prevalance']	
 *-*-	prevalance_id	GenboreeKB Place Holder	
 *-*--	prevalance	.	
 *-*-*	cross_references	./following-sibling::XRef	
@@ -196,15 +196,15 @@
 #	MeasureSet		
 *-*	alleles	./MeasureSet/Measure	
 *-*-	allele_id	GenboreeKB Place Holder	
-# *-*--	nucleotide_change	./AttributeSet/Attribute[@Type = "nucleotide change"]	
-*-*--	gene	./MeasureRelationship[@Type="variant in gene"]	
-*-*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type, "HGVS")]	
+# *-*--	nucleotide_change	./AttributeSet/Attribute[@Type = 'nucleotide change']	
+*-*--	gene	./MeasureRelationship[@Type='variant in gene']	
+*-*-*	hgvs	./AttributeSet/Attribute[starts-with(@Type, 'HGVS')]	
 *-*-*-	hgvs_id	GenboreeKB Place Holder	
 *-*-*--	type	./@Type	
 *-*-*--	value	.	
-*-*--	genbank_location	./AttributeSet/Attribute[@Type = "Location"]	
+*-*--	genbank_location	./AttributeSet/Attribute[@Type = 'Location']	
 #	TraitSet		
-*-*	diseases	./TraitSet[@Type="Disease"]/Trait[@Type="Disease"]	
+*-*	diseases	./TraitSet[@Type='Disease']/Trait[@Type='Disease']	
 *-*-	disease_id	GenboreeKB Place Holder	
 *-*-*	names	./Name	
 *-*-*-	name_id	GenboreeKB Place Holder	
