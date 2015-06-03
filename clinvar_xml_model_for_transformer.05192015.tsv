@@ -31,7 +31,7 @@
 *-*-	observed_data_id	GenboreeKB Place Holder	
 *-*--	data	./Attribute	
 #	MeasureSet Information		
--	clinvar_variant_id	./ReferenceClinVarAssertion/MeasureSet/@ID	should we limit the type to be "variant"?
+-	clinvar_variant_id	./ReferenceClinVarAssertion/MeasureSet/@ID	should we limit the type to be variant?
 #	MeasureSet		
 *	alleles	./ReferenceClinVarAssertion/MeasureSet/Measure	
 *-	allele_id	GenboreeKB Place Holder	
