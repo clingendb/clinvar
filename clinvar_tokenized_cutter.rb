@@ -7,37 +7,12 @@
 #
 require 'progressPrinter'
 require 'logging'
+require_relative 'clinvar_tokenized_parser'
 
-class ClinVarXMLTokenizedCutter
+class ClinVarXMLTokenizedCutter << ClinVarXMLTokenizedParser
   def initialize(file, id)
-    @file = File.open(file,'rb')
-    @log = Logging.logger(STDERR)
-    @log.level = :debug
-    @clinvar_set_locs = []
-    @start_line_no =  []
-    @end_line_no =  []
-    @total_lines_cnt = 0
-    @clinvar_set_ids = []
-    @KEY1 = '<ClinVarSet'
-    @KEY2 = '/ClinVarSet'
+    super(file)
     @id = id
-    @lines_buffer = ''
-  end
-
-  def get_clinvar_set_locs_and_ids
-    @file.each_line do |line|
-      @total_lines_cnt += 1
-      if line.include? @KEY1
-        @start_line_no << @file.lineno
-        @clinvar_set_ids << line.match(/<ClinVarSet ID=(.*)>/)[0]
-      elsif line.include? @KEY2
-        @end_line_no << @file.lineno
-      end
-    end
-    if @start_line_no.length != @end_line_no.length
-      raise "Incomplete clinvarset detected."
-    end
-    @file.rewind
   end
 
   def parse str
@@ -74,6 +49,6 @@ class ClinVarXMLTokenizedCutter
       end
       line_cnt += 1
     end
-
   end
+
 end

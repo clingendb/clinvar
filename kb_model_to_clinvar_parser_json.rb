@@ -20,7 +20,6 @@ class  KBModelToClinVarParserJson
     return process_root(lines)
   end
 
-
   private
 
   def process_root(lines)
