@@ -29,9 +29,7 @@ class ClinVarXMLTokenizedUploader
     @KEY1 = '<ClinVarSet'
     @KEY2 = '/ClinVarSet'
     @lines_buffer = ''
-    @id = 31027
-    $stderr.puts "*****************The starting id is set to be#{@id}"
-    puts "*****************The starting id is set to be#{@id}"
+    @id = 1
   end
 
   def get_clinvar_set_locs_and_ids
@@ -116,7 +114,5 @@ class ClinVarXMLTokenizedUploader
 
     parse @lines_buffer
 
-    $stderr.puts "*****************The starting id is set to be#{@id}"
-    puts "*****************The starting id is set to be#{@id}"
   end
 end
