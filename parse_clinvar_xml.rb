@@ -4,7 +4,7 @@
 #
 #
 #
-require_relative 'clinvar_tokenized_uploader_to_file'
+require 'clinvar_tokenized_uploader_to_file'
 require 'para_check'
 require 'json'
 require 'logging'
