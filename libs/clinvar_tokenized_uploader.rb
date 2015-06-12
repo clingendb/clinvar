@@ -12,7 +12,6 @@ require 'recursive_filler'
 require 'auto_rand_str_id'
 require 'json_to_kb'
 require 'remove_empty_and_nil'
-require 'api_uploader'
 require 'json'
 
 class ClinVarXMLTokenizedUploader
@@ -56,28 +55,6 @@ class ClinVarXMLTokenizedUploader
   end
 
   def parse str
-    xml = Nokogiri::XML(str)
-    filler = RecursiveFiller.new()
-    ga = JsonToKB.new('DocumentID',@id)
-    id_adder = AutoRandStrID.new()
-    puts "TODO: Fix this post and prefix"
-    id_adder.setPreAndPostfix('snp','id')
-    uploader = APIUploader.new()
-    raise "Call configure_api first" unless @api_ready
-    uploader.configure(@group,@kb,@coll)
-    uploader.set_resource_path("doc/#{@id}?")
-    hash = filler.fill(xml,@h)['DocumentID']
-    filler.report_nil_and_empty_paths
-    json= id_adder.modifyIDs(ga.to_kb(hash))
-    json = RemoveEmptyAndNilKB.process(json)
-    @log.debug "json to be uploaded:\n"+json.to_json
-    uploader.upload(json)
-    @log.debug uploader.serverStatusMsg
-    if not uploader.uploadSuccessful?
-      @log.warn "Upload failed" if uploader.uploadSuccessful?
-      @log.warn uploader.serverMsg
-    end
-    @id += 1
   end
 
   def run
